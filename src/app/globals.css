@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #f6f7fb;
+  color: #0f172a;
+}
+
+.band-excellent {
+  background-color: #1f9d6d;
+}
+.band-stable {
+  background-color: #4c8dff;
+}
+.band-watch {
+  background-color: #e8a72c;
+}
+.band-atrisk {
+  background-color: #e8672c;
+}
+.band-critical {
+  background-color: #d6395a;
+}

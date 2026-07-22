@@ -1,3 +1,4 @@
+import Logo from "@/components/Logo";
 import { signIn } from "./actions";
 
 export default function LoginPage({
@@ -9,7 +10,7 @@ export default function LoginPage({
     <div className="min-h-screen flex items-center justify-center bg-surface px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 h-10 w-10 rounded-lg bg-brand" />
+          <Logo className="mx-auto mb-3 h-10 w-10" />
           <h1 className="text-xl font-semibold text-ink">Opservor HQ</h1>
           <p className="text-sm text-muted">Founder Dashboard</p>
         </div>

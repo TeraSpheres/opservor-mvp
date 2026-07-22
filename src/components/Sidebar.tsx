@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Logo from "@/components/Logo";
 import { signOut } from "@/app/login/actions";
 
 // Per Section 4 of the spec: only "Founder Dashboard" and "Data Entry"
@@ -25,7 +26,7 @@ export default function Sidebar({ userName }: { userName: string }) {
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-panel">
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="h-8 w-8 rounded-lg bg-brand" />
+        <Logo className="h-8 w-8" />
         <div>
           <p className="text-sm font-semibold text-ink leading-none">Opservor HQ</p>
           <p className="text-xs text-muted leading-none mt-1">v1.3</p>

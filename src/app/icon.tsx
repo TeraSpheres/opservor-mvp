@@ -12,49 +12,46 @@ export default function Icon() {
       <svg
         width={32}
         height={32}
-        viewBox="0 0 100 100"
+        viewBox="0 0 40 40"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <defs>
-          <path id="helix-left" d="M 35 10 Q 30 25, 35 40 Q 40 55, 35 70 Q 30 85, 35 95" />
-          <path id="helix-right" d="M 65 10 Q 70 25, 65 40 Q 60 55, 65 70 Q 70 85, 65 95" />
-        </defs>
+        {/* Top hemisphere edges */}
+        <line x1="20" y1="4.2" x2="27.1" y2="8.6" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="20" y1="4.2" x2="12.9" y2="8.6" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="27.1" y1="8.6" x2="31.4" y2="16.1" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="12.9" y1="8.6" x2="8.6" y2="16.1" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="27.1" y1="8.6" x2="20" y2="14.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="12.9" y1="8.6" x2="20" y2="14.2" stroke={BRAND_BLUE} strokeWidth="1" />
 
-        <use href="#helix-left" fill="none" stroke={BRAND_BLUE} strokeWidth="5" strokeLinecap="round" />
-        <use href="#helix-right" fill="none" stroke={BRAND_BLUE} strokeWidth="5" strokeLinecap="round" />
+        {/* Upper middle band */}
+        <line x1="31.4" y1="16.1" x2="35.1" y2="24.8" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="8.6" y1="16.1" x2="4.9" y2="24.8" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="31.4" y1="16.1" x2="24.5" y2="19.8" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="8.6" y1="16.1" x2="15.5" y2="19.8" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="20" y1="14.2" x2="24.5" y2="19.8" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="20" y1="14.2" x2="15.5" y2="19.8" stroke={BRAND_BLUE} strokeWidth="1" />
 
-        <circle cx="35" cy="15" r="4" fill={BRAND_BLUE} />
-        <circle cx="42" cy="25" r="4" fill={BRAND_BLUE} />
-        <circle cx="50" cy="32" r="4" fill={BRAND_BLUE} />
-        <circle cx="58" cy="25" r="4" fill={BRAND_BLUE} />
-        <circle cx="65" cy="15" r="4" fill={BRAND_BLUE} />
+        {/* Equatorial band */}
+        <line x1="35.1" y1="24.8" x2="31.4" y2="33.5" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="4.9" y1="24.8" x2="8.6" y2="33.5" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="35.1" y1="24.8" x2="24.5" y2="29.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="4.9" y1="24.8" x2="15.5" y2="29.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="24.5" y1="19.8" x2="24.5" y2="29.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="15.5" y1="19.8" x2="15.5" y2="29.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="24.5" y1="29.2" x2="20" y2="34.7" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="15.5" y1="29.2" x2="20" y2="34.7" stroke={BRAND_BLUE} strokeWidth="1" />
 
-        <circle cx="65" cy="45" r="4" fill={BRAND_BLUE} />
-        <circle cx="58" cy="55" r="4" fill={BRAND_BLUE} />
-        <circle cx="50" cy="62" r="4" fill={BRAND_BLUE} />
-        <circle cx="42" cy="55" r="4" fill={BRAND_BLUE} />
-        <circle cx="35" cy="45" r="4" fill={BRAND_BLUE} />
+        {/* Lower hemisphere edges */}
+        <line x1="31.4" y1="33.5" x2="20" y2="38.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="8.6" y1="33.5" x2="20" y2="38.2" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="31.4" y1="33.5" x2="27.1" y2="31.4" stroke={BRAND_BLUE} strokeWidth="1" />
+        <line x1="8.6" y1="33.5" x2="12.9" y2="31.4" stroke={BRAND_BLUE} strokeWidth="1" />
 
-        <circle cx="35" cy="75" r="4" fill={BRAND_BLUE} />
-        <circle cx="42" cy="85" r="4" fill={BRAND_BLUE} />
-        <circle cx="50" cy="92" r="4" fill={BRAND_BLUE} />
-        <circle cx="58" cy="85" r="4" fill={BRAND_BLUE} />
-        <circle cx="65" cy="75" r="4" fill={BRAND_BLUE} />
-
-        <line x1="35" y1="15" x2="42" y2="25" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="42" y1="25" x2="50" y2="32" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="50" y1="32" x2="58" y2="25" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="58" y1="25" x2="65" y2="15" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-
-        <line x1="65" y1="45" x2="58" y2="55" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="58" y1="55" x2="50" y2="62" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="50" y1="62" x2="42" y2="55" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="42" y1="55" x2="35" y2="45" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-
-        <line x1="35" y1="75" x2="42" y2="85" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="42" y1="85" x2="50" y2="92" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="50" y1="92" x2="58" y2="85" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
-        <line x1="58" y1="85" x2="65" y2="75" stroke={BRAND_BLUE} strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
+        {/* Interior structural edges */}
+        <line x1="24.5" y1="19.8" x2="31.4" y2="16.1" stroke={BRAND_BLUE} strokeWidth="0.8" opacity="0.6" />
+        <line x1="15.5" y1="19.8" x2="8.6" y2="16.1" stroke={BRAND_BLUE} strokeWidth="0.8" opacity="0.6" />
+        <line x1="24.5" y1="29.2" x2="35.1" y2="24.8" stroke={BRAND_BLUE} strokeWidth="0.8" opacity="0.55" />
+        <line x1="15.5" y1="29.2" x2="4.9" y2="24.8" stroke={BRAND_BLUE} strokeWidth="0.8" opacity="0.55" />
       </svg>
     ),
     { ...size }

@@ -2,7 +2,6 @@ import ComingSoon from "@/components/ComingSoon";
 
 const VALID_MODULES = [
   "fleet",
-  "warehouse",
   "inventory",
   "finance",
   "hr",

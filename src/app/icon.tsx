@@ -16,30 +16,44 @@ export default function Icon() {
         xmlns="http://www.w3.org/2000/svg"
       >
         {/* Top vertex */}
-        <line x1="20" y1="3" x2="26" y2="10" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="20" y1="3" x2="14" y2="10" stroke={BRAND_BLUE} strokeWidth="0.9" />
+        <line x1="20" y1="2" x2="24.7" y2="9" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="20" y1="2" x2="15.3" y2="9" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Upper pentagon outline */}
-        <line x1="26" y1="10" x2="32" y2="16" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="14" y1="10" x2="8" y2="16" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="32" y1="16" x2="28" y2="26" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="8" y1="16" x2="12" y2="26" stroke={BRAND_BLUE} strokeWidth="0.9" />
+        {/* Upper left edges */}
+        <line x1="15.3" y1="9" x2="8" y2="12" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="15.3" y1="9" x2="10" y2="20" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Equatorial band - sides */}
-        <line x1="28" y1="26" x2="20" y2="32" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="12" y1="26" x2="20" y2="32" stroke={BRAND_BLUE} strokeWidth="0.9" />
+        {/* Upper right edges */}
+        <line x1="24.7" y1="9" x2="32" y2="12" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="24.7" y1="9" x2="30" y2="20" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Lower band */}
-        <line x1="20" y1="32" x2="24" y2="36" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="20" y1="32" x2="16" y2="36" stroke={BRAND_BLUE} strokeWidth="0.9" />
+        {/* Top horizontal edges */}
+        <line x1="8" y1="12" x2="32" y2="12" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Bottom vertex connection */}
-        <line x1="24" y1="36" x2="20" y2="38" stroke={BRAND_BLUE} strokeWidth="0.9" />
-        <line x1="16" y1="36" x2="20" y2="38" stroke={BRAND_BLUE} strokeWidth="0.9" />
+        {/* Upper side edges */}
+        <line x1="8" y1="12" x2="10" y2="20" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="32" y1="12" x2="30" y2="20" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Connecting cross edges - minimal */}
-        <line x1="26" y1="10" x2="32" y2="16" stroke={BRAND_BLUE} strokeWidth="0.7" opacity="0.5" />
-        <line x1="14" y1="10" x2="8" y2="16" stroke={BRAND_BLUE} strokeWidth="0.7" opacity="0.5" />
+        {/* Middle horizontal edges */}
+        <line x1="10" y1="20" x2="20" y2="28" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="30" y1="20" x2="20" y2="28" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Lower left edges */}
+        <line x1="10" y1="20" x2="6" y2="30" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="20" y1="28" x2="8" y2="36" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Lower right edges */}
+        <line x1="30" y1="20" x2="34" y2="30" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="20" y1="28" x2="32" y2="36" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Bottom edges */}
+        <line x1="6" y1="30" x2="8" y2="36" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="34" y1="30" x2="32" y2="36" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="8" y1="36" x2="32" y2="36" stroke={BRAND_BLUE} strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Center vertical structure */}
+        <line x1="20" y1="9" x2="20" y2="28" stroke={BRAND_BLUE} strokeWidth="1.2" opacity="0.65" strokeLinecap="round" />
+        <line x1="6" y1="30" x2="34" y2="30" stroke={BRAND_BLUE} strokeWidth="1.2" opacity="0.6" strokeLinecap="round" />
       </svg>
     ),
     { ...size }

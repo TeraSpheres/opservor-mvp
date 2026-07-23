@@ -391,8 +391,8 @@ export default function WarehousePage() {
   return (
     <div className="mx-auto max-w-7xl px-8 py-8">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-ink">Warehouse Operations</h1>
-        <p className="text-sm text-muted">Track warehouse performance across sites</p>
+        <h1 className="text-2xl font-bold text-ink">Warehouse Operations</h1>
+        <p className="text-sm text-muted">Track warehouse performance and site metrics</p>
       </div>
 
       <div className="mb-6 flex gap-4 items-center justify-between">

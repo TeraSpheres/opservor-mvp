@@ -1,5 +1,5 @@
-// Opservor HQ mark — bold geodesic wireframe sphere. Thick, confident strokes
-// forming complete icosahedron structure with striking 3D presence.
+// Opservor HQ mark — refined geodesic wireframe sphere with visible nodes.
+// Thin connecting edges and small dots at vertices create elegant, minimal design.
 export default function Logo({
   size = 32,
   className,
@@ -19,45 +19,43 @@ export default function Logo({
       aria-label="Opservor HQ"
       className={className}
     >
-      {/* Top vertex */}
-      <line x1="20" y1="2" x2="24.7" y2="9" stroke={c} strokeWidth="1.2" opacity={0.95} strokeLinecap="round" />
-      <line x1="20" y1="2" x2="15.3" y2="9" stroke={c} strokeWidth="1.2" opacity={0.95} strokeLinecap="round" />
+      {/* Edges - thin lines */}
+      <line x1="20" y1="4" x2="28" y2="10" stroke={c} strokeWidth="0.5" opacity={0.8} />
+      <line x1="20" y1="4" x2="12" y2="10" stroke={c} strokeWidth="0.5" opacity={0.8} />
+      <line x1="28" y1="10" x2="34" y2="18" stroke={c} strokeWidth="0.5" opacity={0.75} />
+      <line x1="12" y1="10" x2="6" y2="18" stroke={c} strokeWidth="0.5" opacity={0.75} />
+      <line x1="28" y1="10" x2="26" y2="20" stroke={c} strokeWidth="0.5" opacity={0.78} />
+      <line x1="12" y1="10" x2="14" y2="20" stroke={c} strokeWidth="0.5" opacity={0.78} />
 
-      {/* Upper left edges */}
-      <line x1="15.3" y1="9" x2="8" y2="12" stroke={c} strokeWidth="1.2" opacity={0.9} strokeLinecap="round" />
-      <line x1="15.3" y1="9" x2="10" y2="20" stroke={c} strokeWidth="1.2" opacity={0.88} strokeLinecap="round" />
+      <line x1="34" y1="18" x2="32" y2="28" stroke={c} strokeWidth="0.5" opacity={0.7} />
+      <line x1="6" y1="18" x2="8" y2="28" stroke={c} strokeWidth="0.5" opacity={0.7} />
+      <line x1="26" y1="20" x2="32" y2="28" stroke={c} strokeWidth="0.5" opacity={0.72} />
+      <line x1="14" y1="20" x2="8" y2="28" stroke={c} strokeWidth="0.5" opacity={0.72} />
 
-      {/* Upper right edges */}
-      <line x1="24.7" y1="9" x2="32" y2="12" stroke={c} strokeWidth="1.2" opacity={0.9} strokeLinecap="round" />
-      <line x1="24.7" y1="9" x2="30" y2="20" stroke={c} strokeWidth="1.2" opacity={0.88} strokeLinecap="round" />
+      <line x1="20" y1="16" x2="26" y2="20" stroke={c} strokeWidth="0.5" opacity={0.7} />
+      <line x1="20" y1="16" x2="14" y2="20" stroke={c} strokeWidth="0.5" opacity={0.7} />
+      <line x1="20" y1="16" x2="32" y2="28" stroke={c} strokeWidth="0.5" opacity={0.65} />
+      <line x1="20" y1="16" x2="8" y2="28" stroke={c} strokeWidth="0.5" opacity={0.65} />
 
-      {/* Top horizontal edges */}
-      <line x1="8" y1="12" x2="32" y2="12" stroke={c} strokeWidth="1.2" opacity={0.85} strokeLinecap="round" />
+      <line x1="32" y1="28" x2="24" y2="35" stroke={c} strokeWidth="0.5" opacity={0.62} />
+      <line x1="8" y1="28" x2="16" y2="35" stroke={c} strokeWidth="0.5" opacity={0.62} />
+      <line x1="24" y1="35" x2="16" y2="35" stroke={c} strokeWidth="0.5" opacity={0.6} />
+      <line x1="20" y1="16" x2="24" y2="35" stroke={c} strokeWidth="0.5" opacity={0.55} />
+      <line x1="20" y1="16" x2="16" y2="35" stroke={c} strokeWidth="0.5" opacity={0.55} />
 
-      {/* Upper side edges */}
-      <line x1="8" y1="12" x2="10" y2="20" stroke={c} strokeWidth="1.2" opacity={0.83} strokeLinecap="round" />
-      <line x1="32" y1="12" x2="30" y2="20" stroke={c} strokeWidth="1.2" opacity={0.83} strokeLinecap="round" />
-
-      {/* Middle horizontal edges */}
-      <line x1="10" y1="20" x2="20" y2="28" stroke={c} strokeWidth="1.2" opacity={0.8} strokeLinecap="round" />
-      <line x1="30" y1="20" x2="20" y2="28" stroke={c} strokeWidth="1.2" opacity={0.8} strokeLinecap="round" />
-
-      {/* Lower left edges */}
-      <line x1="10" y1="20" x2="6" y2="30" stroke={c} strokeWidth="1.2" opacity={0.78} strokeLinecap="round" />
-      <line x1="20" y1="28" x2="8" y2="36" stroke={c} strokeWidth="1.2" opacity={0.75} strokeLinecap="round" />
-
-      {/* Lower right edges */}
-      <line x1="30" y1="20" x2="34" y2="30" stroke={c} strokeWidth="1.2" opacity={0.78} strokeLinecap="round" />
-      <line x1="20" y1="28" x2="32" y2="36" stroke={c} strokeWidth="1.2" opacity={0.75} strokeLinecap="round" />
-
-      {/* Bottom edges */}
-      <line x1="6" y1="30" x2="8" y2="36" stroke={c} strokeWidth="1.2" opacity={0.72} strokeLinecap="round" />
-      <line x1="34" y1="30" x2="32" y2="36" stroke={c} strokeWidth="1.2" opacity={0.72} strokeLinecap="round" />
-      <line x1="8" y1="36" x2="32" y2="36" stroke={c} strokeWidth="1.2" opacity={0.7} strokeLinecap="round" />
-
-      {/* Center vertical structure */}
-      <line x1="20" y1="9" x2="20" y2="28" stroke={c} strokeWidth="1" opacity={0.6} strokeLinecap="round" />
-      <line x1="6" y1="30" x2="34" y2="30" stroke={c} strokeWidth="1" opacity={0.55} strokeLinecap="round" />
+      {/* Vertices - nodes/dots */}
+      <circle cx="20" cy="4" r="1.2" fill={c} opacity={0.9} />
+      <circle cx="28" cy="10" r="1.2" fill={c} opacity={0.85} />
+      <circle cx="12" cy="10" r="1.2" fill={c} opacity={0.85} />
+      <circle cx="34" cy="18" r="1.2" fill={c} opacity={0.75} />
+      <circle cx="6" cy="18" r="1.2" fill={c} opacity={0.75} />
+      <circle cx="26" cy="20" r="1.2" fill={c} opacity={0.78} />
+      <circle cx="14" cy="20" r="1.2" fill={c} opacity={0.78} />
+      <circle cx="20" cy="16" r="1" fill={c} opacity={0.7} />
+      <circle cx="32" cy="28" r="1.2" fill={c} opacity={0.68} />
+      <circle cx="8" cy="28" r="1.2" fill={c} opacity={0.68} />
+      <circle cx="24" cy="35" r="1.2" fill={c} opacity={0.62} />
+      <circle cx="16" cy="35" r="1.2" fill={c} opacity={0.62} />
     </svg>
   );
 }

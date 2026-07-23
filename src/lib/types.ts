@@ -55,7 +55,37 @@ export interface Alert {
   owner: string | null;
   due_date: string | null;
   status: AlertStatus;
+  site_id: string | null; // warehouse_site foreign key (v1.1)
   created_at: string;
+}
+
+// =====================================================================
+// Warehouse Module (v1.1)
+// =====================================================================
+
+export interface WarehouseSite {
+  id: string;
+  company_id: string;
+  name: string;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ShiftType = "A" | "B" | "C" | "all";
+
+export interface WarehouseSnapshot {
+  id: string;
+  company_id: string;
+  site_id: string;
+  date: string; // YYYY-MM-DD
+  shift: ShiftType;
+  productivity_pct: number; // 0-100
+  orders_processed: number;
+  orders_pending: number;
+  dock_utilization_pct: number; // 0-100
+  created_at: string;
+  updated_at: string;
 }
 
 // =====================================================================

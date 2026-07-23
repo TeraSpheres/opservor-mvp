@@ -112,6 +112,17 @@ as $$
   select company_id from app_user where auth_id = auth.uid()
 $$;
 
+-- Helper: auto-update updated_at column on any table that has it
+create or replace function update_updated_at_column()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 create policy "user reads own company" on company
   for select using (id = auth_company_id());
 

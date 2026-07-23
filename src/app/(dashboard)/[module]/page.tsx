@@ -9,6 +9,8 @@ const VALID_MODULES = [
   "reports",
 ];
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return VALID_MODULES.map((module) => ({ module }));
 }

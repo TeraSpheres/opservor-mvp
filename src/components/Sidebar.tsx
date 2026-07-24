@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", live: true },
   { href: "/dashboard/entry", label: "Data Entry", live: true },
   { href: "/fleet", label: "Fleet", live: false },
-  { href: "/warehouse", label: "Warehouse", live: false },
+  { href: "/warehouse", label: "Warehouse", live: true },
   { href: "/inventory", label: "Inventory", live: false },
   { href: "/finance", label: "Finance", live: false },
   { href: "/hr", label: "HR", live: false },

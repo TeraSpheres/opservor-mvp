@@ -139,6 +139,57 @@ export interface FleetMetrics {
 }
 
 // =====================================================================
+// Inventory Module (v1.0)
+// =====================================================================
+
+export interface InventorySku {
+  id: string;
+  company_id: string;
+  sku: string;
+  name: string;
+  category: string | null;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  reorder_level: number;
+  reorder_quantity: number;
+  unit_cost: number | null;
+  unit_price: number | null;
+  warehouse_location: string | null;
+  supplier: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MovementType = "inbound" | "outbound" | "adjustment" | "reorder";
+
+export interface InventoryMovement {
+  id: string;
+  company_id: string;
+  sku_id: string;
+  type: MovementType;
+  quantity: number;
+  reference: string | null;
+  notes: string | null;
+  date: string; // YYYY-MM-DD
+  created_at: string;
+}
+
+export type ReorderStatus = "ok" | "low" | "critical" | "overstocked";
+
+export interface InventorySnapshot {
+  id: string;
+  company_id: string;
+  sku_id: string;
+  date: string; // YYYY-MM-DD
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  days_on_hand: number | null;
+  reorder_status: ReorderStatus | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================================
 // Operational tables (v1.4+)
 // =====================================================================
 

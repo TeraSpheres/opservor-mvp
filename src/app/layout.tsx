@@ -1,3 +1,4 @@
+// Force rebuild v2
 import type { Metadata } from "next";
 import "./globals.css";
 

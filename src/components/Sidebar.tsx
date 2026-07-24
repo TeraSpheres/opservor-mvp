@@ -11,9 +11,9 @@ import { signOut } from "@/app/login/actions";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", live: true },
   { href: "/dashboard/entry", label: "Data Entry", live: true },
-  { href: "/fleet", label: "Fleet", live: false },
+  { href: "/fleet", label: "Fleet", live: true },
   { href: "/warehouse", label: "Warehouse", live: true },
-  { href: "/inventory", label: "Inventory", live: false },
+  { href: "/inventory", label: "Inventory", live: true },
   { href: "/finance", label: "Finance", live: false },
   { href: "/hr", label: "HR", live: false },
   { href: "/safety", label: "Safety", live: false },

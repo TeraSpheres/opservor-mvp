@@ -89,6 +89,56 @@ export interface WarehouseSnapshot {
 }
 
 // =====================================================================
+// Fleet Module (v1.0)
+// =====================================================================
+
+export type VehicleStatus = "active" | "maintenance" | "retired" | "inactive";
+
+export interface FleetVehicle {
+  id: string;
+  company_id: string;
+  name: string;
+  type: string;
+  status: VehicleStatus;
+  license_plate: string | null;
+  fuel_type: string | null;
+  purchase_date: string | null;
+  mileage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TripStatus = "completed" | "in_progress" | "cancelled";
+
+export interface FleetTrip {
+  id: string;
+  company_id: string;
+  vehicle_id: string;
+  date: string; // YYYY-MM-DD
+  miles_driven: number;
+  fuel_used: number | null;
+  origin: string | null;
+  destination: string | null;
+  status: TripStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FleetMetrics {
+  id: string;
+  company_id: string;
+  vehicle_id: string;
+  date: string; // YYYY-MM-DD
+  trips_completed: number;
+  miles_driven: number;
+  fuel_efficiency: number | null;
+  utilization_hours: number | null;
+  on_time_pct: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================================
 // Operational tables (v1.4+)
 // =====================================================================
 

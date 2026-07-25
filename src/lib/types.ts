@@ -190,6 +190,120 @@ export interface InventorySnapshot {
 }
 
 // =====================================================================
+// Finance Module (v1.0)
+// =====================================================================
+
+export interface FinanceCostCenter {
+  id: string;
+  company_id: string;
+  name: string;
+  code: string;
+  manager: string | null;
+  budget_ytd: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FinanceTransaction {
+  id: string;
+  company_id: string;
+  cost_center_id: string;
+  type: "revenue" | "expense" | "adjustment";
+  category: string;
+  amount: number;
+  description: string | null;
+  date: string; // YYYY-MM-DD
+  reference: string | null;
+  created_at: string;
+}
+
+export interface FinanceSnapshot {
+  id: string;
+  company_id: string;
+  cost_center_id: string;
+  month: string; // YYYY-MM
+  budget_allocated: number;
+  revenue_actual: number;
+  expense_actual: number;
+  variance_pct: number | null;
+  burn_rate_pct: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================================
+// HR Module (v1.0)
+// =====================================================================
+
+export interface HrDepartment {
+  id: string;
+  company_id: string;
+  name: string;
+  code: string;
+  head: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmployeeStatus = "active" | "onboarding" | "on_leave" | "departed" | "inactive";
+
+export interface HrEmployee {
+  id: string;
+  company_id: string;
+  department_id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: EmployeeStatus;
+  hire_date: string; // YYYY-MM-DD
+  manager_id: string | null;
+  salary: number | null;
+  work_location: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AttendanceStatus = "present" | "absent" | "late" | "leave" | "remote";
+
+export interface HrAttendance {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  hours_worked: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface HrPerformance {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  period: string; // YYYY-Q1 format
+  rating: number; // 1-5
+  category: string | null;
+  feedback: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HrSnapshot {
+  id: string;
+  company_id: string;
+  month: string; // YYYY-MM
+  total_headcount: number;
+  active_count: number;
+  new_hires: number;
+  departures: number;
+  avg_attendance_pct: number | null;
+  avg_performance: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================================
 // Operational tables (v1.4+)
 // =====================================================================
 

@@ -29,7 +29,13 @@ front-end bug must not be able to cross the tenant boundary.
 No `updated_at`, no update trigger, by design — a ledger row that changes after
 the fact is a defect:
 
-`fleet_trip` · `inventory_movement` · `finance_transaction` · `hr_attendance`
+`inventory_movement` · `finance_transaction` · `hr_attendance`
+
+> **Inconsistency.** `fleet_trip` is a ledger by nature but carries `updated_at`
+> and an update trigger, unlike the other three. It was written before the
+> convention settled. Harmless, but it means "does this table have `updated_at`"
+> is not a reliable test for whether something is a ledger. Worth aligning when
+> Fleet is next touched.
 
 ---
 
@@ -116,21 +122,33 @@ until a department exists.
 
 | File | Module | Applied |
 |---|---|---|
+Verified against the live database on 25 July 2026, not inferred from what was
+committed. Shipping code does not apply schema — a Vercel deploy never touches
+the database.
+
+| File | Module | Applied |
+|---|---|---|
 | `0001_init.sql` | Core — `company`, `app_user`, `auth_company_id()`, `update_updated_at_column()` | Yes |
 | `0002_add_warehouse_module.sql` | Warehouse | Yes |
-| `0003_add_fleet_module.sql` | Fleet | Yes |
-| `0004_add_inventory_module.sql` | Inventory | Yes |
-| `0005_add_finance_module.sql` | Finance | **Pending** |
-| `0006_add_hr_module.sql` | HR | **Pending** |
+| `0003` / `RUN_ME_fleet_inventory.sql` | Fleet | Yes |
+| `0004` / `RUN_ME_fleet_inventory.sql` | Inventory | Yes |
+| `RUN_ME_finance_hr.sql` (`0005`+`0006`) | Finance, HR | Yes |
 | `0007_inventory_stock_sync.sql` | Inventory stock trigger | **Pending** |
 
-Run `RUN_ME_finance_hr.sql` in the Supabase SQL editor to apply `0005` and `0006`.
-It combines both, is safe to re-run, and preflights that `0001` is present. Until
-it runs, `/finance` and `/hr` error at the database layer.
+Fleet and Inventory ran months after their code deployed — both routes errored at
+the database layer in the meantime without anyone noticing, because nobody
+visited them. **Apply the migration in the same session you ship the module.**
 
-Then run `0007` to install the stock trigger. It backfills existing movements, so
-on-hand figures become correct retrospectively, and ends with a drift check that
-must return `0` on every row.
+### Re-runnability
+
+`0003` and `0004` shipped with bare `create policy` and `create trigger`.
+PostgreSQL has no `IF NOT EXISTS` for either, so a half-applied run could not be
+repaired by running the file again — it would fail on "already exists" and leave
+you hand-editing SQL to find the resume point.
+
+Every migration from `0005` onward drops before creating and preflights its
+dependencies. `RUN_ME_fleet_inventory.sql` is the guarded rewrite of `0003`+`0004`.
+Use the `RUN_ME_` files, not the originals.
 
 ---
 

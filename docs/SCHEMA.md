@@ -66,9 +66,23 @@ both order counts are `check >= 0`.
 Availability is derived, never stored: `quantity_on_hand - quantity_reserved`.
 A SKU is low when that value falls to or below `reorder_level`.
 
-> **Two gaps here.** `inventory_sku.sku` is unique *globally*, not per company —
-> two tenants cannot both use `WIDGET-1`. And logging a movement does **not**
-> adjust `quantity_on_hand`. See [Known gaps](#known-gaps).
+Since `0007`, movements adjust stock automatically via the
+`inventory_movement_sync` trigger. The sign convention lives in one function,
+`inventory_movement_delta(type, quantity)`:
+
+| Type | Effect on `quantity_on_hand` |
+|---|---|
+| `inbound` | add |
+| `outbound` | subtract |
+| `adjustment` | add as signed — may be negative |
+| `reorder` | **none** — raising a PO doesn't change what's on the shelf |
+
+The trigger fires on UPDATE and DELETE too. The ledger is meant to be
+append-only, but if a row is ever corrected by hand the stock figure follows
+instead of silently drifting.
+
+> **One gap remains here.** `inventory_sku.sku` is unique *globally*, not per
+> company — two tenants cannot both use `WIDGET-1`. See [Known gaps](#known-gaps).
 
 ## Finance v1.0 — `0005`
 
@@ -108,10 +122,15 @@ until a department exists.
 | `0004_add_inventory_module.sql` | Inventory | Yes |
 | `0005_add_finance_module.sql` | Finance | **Pending** |
 | `0006_add_hr_module.sql` | HR | **Pending** |
+| `0007_inventory_stock_sync.sql` | Inventory stock trigger | **Pending** |
 
-Run `RUN_ME_finance_hr.sql` in the Supabase SQL editor to apply the last two. It
-combines both, is safe to re-run, and preflights that `0001` is present. Until it
-runs, `/finance` and `/hr` error at the database layer.
+Run `RUN_ME_finance_hr.sql` in the Supabase SQL editor to apply `0005` and `0006`.
+It combines both, is safe to re-run, and preflights that `0001` is present. Until
+it runs, `/finance` and `/hr` error at the database layer.
+
+Then run `0007` to install the stock trigger. It backfills existing movements, so
+on-hand figures become correct retrospectively, and ends with a drift check that
+must return `0` on every row.
 
 ---
 
@@ -121,9 +140,9 @@ Recorded so they stay decisions rather than becoming surprises.
 
 1. **`inventory_sku.sku` is globally unique.** Must become
    `unique (company_id, sku)` before a second tenant is onboarded.
-2. **Movements don't move stock.** `inventory_movement` inserts leave
-   `inventory_sku.quantity_on_hand` untouched. Needs a trigger or a transactional
-   update in the server action.
+2. ~~**Movements don't move stock.**~~ Fixed in `0007` — the
+   `inventory_movement_sync` trigger now maintains `quantity_on_hand`, and
+   historical movements were backfilled.
 3. **Snapshot tables are inert.** Four modules define them; nothing populates
    them. Metrics are derived on read, which is correct at current volume and
    won't stay correct.

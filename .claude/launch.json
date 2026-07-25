@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "teraspheres-site",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "-l", "4321", "C:/opservor-mvp/teraspheres-website"],
+      "port": 4321
+    }
+  ]
+}

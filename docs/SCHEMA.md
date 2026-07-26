@@ -146,19 +146,23 @@ of them at once.
 
 ## Migration status
 
-Verified against the live database on 25 July 2026, not inferred from what was
-committed. Shipping code does not apply schema — a Vercel deploy never touches
-the database.
+Shipping code does not apply schema — a Vercel deploy never touches the database.
+Applying is always a deliberate manual step.
+
+Rows marked **verified** were read back from `pg_class` / `pg_policies`. Rows
+marked **reported** were confirmed by the operator who ran them but not read back.
+The distinction matters: Fleet and Inventory were once recorded as applied on
+inference alone and were not, which only surfaced when a later migration refused
+to run.
 
 | File | Module | Applied |
 |---|---|---|
-| `0001_init.sql` | Core — `company`, `app_user`, `auth_company_id()`, `update_updated_at_column()` | Yes |
-| `0002_add_warehouse_module.sql` | Warehouse | Yes |
-| `0003` / `RUN_ME_fleet_inventory.sql` | Fleet | Yes |
-| `0004` / `RUN_ME_fleet_inventory.sql` | Inventory | Yes |
-| `RUN_ME_finance_hr.sql` (`0005`+`0006`) | Finance, HR | Yes |
-| `0007_inventory_stock_sync.sql` | Inventory stock trigger | **Pending** |
-| `0008_add_safety_and_reports.sql` | Safety, Reports | **Pending** |
+| `0001_init.sql` | Core — `company`, `app_user`, `auth_company_id()`, `update_updated_at_column()` | Verified |
+| `0002_add_warehouse_module.sql` | Warehouse | Verified |
+| `0003` / `RUN_ME_fleet_inventory.sql` | Fleet | Verified |
+| `0004` / `RUN_ME_fleet_inventory.sql` | Inventory | Verified |
+| `RUN_ME_finance_hr.sql` (`0005`+`0006`) | Finance, HR | Verified |
+| `RUN_ME_final.sql` (`0007`+`0008`) | Inventory stock trigger, Safety, Reports | Reported |
 
 Fleet and Inventory ran months after their code deployed — both routes errored at
 the database layer in the meantime without anyone noticing, because nobody

@@ -1,6 +1,6 @@
 # Opservor HQ — schema reference
 
-Quick reference for the five production modules. Transcribed from the migrations,
+Quick reference for the seven production modules — the complete v1 scope. Transcribed from the migrations,
 not from intent — where something is defined but unused, it says so.
 
 The formal specification lives in the archive at
@@ -29,7 +29,7 @@ front-end bug must not be able to cross the tenant boundary.
 No `updated_at`, no update trigger, by design — a ledger row that changes after
 the fact is a defect:
 
-`inventory_movement` · `finance_transaction` · `hr_attendance`
+`inventory_movement` · `finance_transaction` · `hr_attendance` · `report_run`
 
 > **Inconsistency.** `fleet_trip` is a ledger by nature but carries `updated_at`
 > and an update trigger, unlike the other three. It was written before the
@@ -116,12 +116,36 @@ manager orphans their reports rather than cascading a deletion through the org
 chart. `department_id` is `not null`, which is why the employee form stays hidden
 until a department exists.
 
+## Safety v1.0 — `0008`
+
+| Table | Purpose |
+|---|---|
+| `safety_incident` | One row per incident. Severity, category, corrective action, status |
+| `safety_inspection` | Scheduled checks. An inspection is something you do; an incident is something that happened |
+| `safety_snapshot` | Monthly rollup — **defined, never written** |
+
+`severity` is `low` / `medium` / `high` / `critical`; `status` is `open` /
+`investigating` / `resolved` / `closed`. Days-since-last-incident and open counts
+are derived on read until the snapshot table is populated.
+
+## Reports v1.0 — `0008`
+
+| Table | Purpose |
+|---|---|
+| `report_definition` | A saved report. `unique (company_id, name)` |
+| `report_run` | Execution log (ledger). No `updated_at` |
+
+**Reports holds no operational data of its own.** It reads what the other modules
+already hold, scoped to a period. Every query is company-scoped by RLS, so a wrong
+filter still cannot reach across tenants.
+
+`module` accepts any of the six modules or `cross_module`, which summarises all
+of them at once.
+
 ---
 
 ## Migration status
 
-| File | Module | Applied |
-|---|---|---|
 Verified against the live database on 25 July 2026, not inferred from what was
 committed. Shipping code does not apply schema — a Vercel deploy never touches
 the database.
@@ -134,6 +158,7 @@ the database.
 | `0004` / `RUN_ME_fleet_inventory.sql` | Inventory | Yes |
 | `RUN_ME_finance_hr.sql` (`0005`+`0006`) | Finance, HR | Yes |
 | `0007_inventory_stock_sync.sql` | Inventory stock trigger | **Pending** |
+| `0008_add_safety_and_reports.sql` | Safety, Reports | **Pending** |
 
 Fleet and Inventory ran months after their code deployed — both routes errored at
 the database layer in the meantime without anyone noticing, because nobody
@@ -161,7 +186,7 @@ Recorded so they stay decisions rather than becoming surprises.
 2. ~~**Movements don't move stock.**~~ Fixed in `0007` — the
    `inventory_movement_sync` trigger now maintains `quantity_on_hand`, and
    historical movements were backfilled.
-3. **Snapshot tables are inert.** Four modules define them; nothing populates
+3. **Snapshot tables are inert.** Five modules define them; nothing populates
    them. Metrics are derived on read, which is correct at current volume and
    won't stay correct.
 4. **`fleet_vehicle.mileage` never updates** from trip data.

@@ -16,8 +16,8 @@ const NAV_ITEMS = [
   { href: "/inventory", label: "Inventory", live: true },
   { href: "/finance", label: "Finance", live: true },
   { href: "/hr", label: "HR", live: true },
-  { href: "/safety", label: "Safety", live: false },
-  { href: "/reports", label: "Reports", live: false },
+  { href: "/safety", label: "Safety", live: true },
+  { href: "/reports", label: "Reports", live: true },
 ];
 
 export default function Sidebar({ userName }: { userName: string }) {

@@ -304,6 +304,93 @@ export interface HrSnapshot {
 }
 
 // =====================================================================
+// Safety Module (v1.0)
+// =====================================================================
+
+export type IncidentSeverity = "low" | "medium" | "high" | "critical";
+export type IncidentStatus = "open" | "investigating" | "resolved" | "closed";
+
+export interface SafetyIncident {
+  id: string;
+  company_id: string;
+  date: string; // YYYY-MM-DD
+  severity: IncidentSeverity;
+  category: string;
+  location: string | null;
+  description: string;
+  corrective_action: string | null;
+  status: IncidentStatus;
+  reported_by: string | null;
+  resolved_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type InspectionResult = "pass" | "conditional" | "fail";
+
+export interface SafetyInspection {
+  id: string;
+  company_id: string;
+  date: string; // YYYY-MM-DD
+  area: string;
+  inspector: string | null;
+  result: InspectionResult;
+  findings: string | null;
+  next_due: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SafetySnapshot {
+  id: string;
+  company_id: string;
+  month: string; // YYYY-MM
+  incidents_total: number;
+  incidents_critical: number;
+  incidents_high: number;
+  inspections_completed: number;
+  inspections_failed: number;
+  days_since_last_incident: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================================
+// Reports Module (v1.0)
+// =====================================================================
+
+export type ReportModule =
+  | "warehouse" | "fleet" | "inventory"
+  | "finance" | "hr" | "safety" | "cross_module";
+
+export type ReportPeriod = "week" | "month" | "quarter" | "year" | "custom";
+
+export interface ReportDefinition {
+  id: string;
+  company_id: string;
+  name: string;
+  module: ReportModule;
+  period: ReportPeriod;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ReportRunStatus = "success" | "empty" | "failed";
+
+export interface ReportRun {
+  id: string;
+  company_id: string;
+  definition_id: string;
+  period_start: string; // YYYY-MM-DD
+  period_end: string;   // YYYY-MM-DD
+  row_count: number | null;
+  status: ReportRunStatus;
+  notes: string | null;
+  created_at: string;
+}
+
+// =====================================================================
 // Operational tables (v1.4+)
 // =====================================================================
 

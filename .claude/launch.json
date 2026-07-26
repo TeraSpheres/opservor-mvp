@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "serve", "-l", "4321", "C:/opservor-mvp/teraspheres-website"],
       "port": 4321
+    },
+    {
+      "name": "brand-assets",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "-l", "4322", "C:/Users/ahsan/Documents/TeraSpheres_Archive/Design_Assets/Logo_Variations"],
+      "port": 4322
     }
   ]
 }

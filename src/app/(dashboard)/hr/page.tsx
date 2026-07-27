@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { HrDepartment, HrEmployee, HrAttendance, HrPerformance } from "@/lib/types";
+import type { HrDepartment, HrEmployee, HrAttendance, HrPerformance, HrTotals } from "@/lib/types";
+import { hrTotals } from "@/lib/totals";
 
 function AddDepartmentForm({ onDepartmentAdded }: { onDepartmentAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -574,6 +575,7 @@ export default function HrPage() {
   const [departments, setDepartments] = useState<HrDepartment[]>([]);
   const [employees, setEmployees] = useState<HrEmployee[]>([]);
   const [reviews, setReviews] = useState<HrPerformance[]>([]);
+  const [totals, setTotals] = useState<HrTotals | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
@@ -617,6 +619,9 @@ export default function HrPage() {
     setDepartments((deptResult.data ?? []) as HrDepartment[]);
     setEmployees((empResult.data ?? []) as HrEmployee[]);
     setReviews((revResult.data ?? []) as HrPerformance[]);
+
+    // Headline figures from the database, not from the rows just fetched.
+    setTotals(await hrTotals(supabase, recentPeriods(1)[0]));
     setIsLoading(false);
   }
 
@@ -624,9 +629,8 @@ export default function HrPage() {
     employees.find((e) => e.id === id)?.name ?? "Unknown employee";
 
   const avgRating =
-    reviews.length > 0
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-      : null;
+    totals?.avg_rating ??
+    (reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null);
 
   // Who has no review for the current quarter — the question a manager
   // actually asks, and the reason this table needed an interface.
@@ -634,9 +638,9 @@ export default function HrPage() {
   const reviewedThisPeriod = new Set(
     reviews.filter((r) => r.period === currentPeriod).map((r) => r.employee_id)
   );
-  const unreviewed = employees.filter(
-    (e) => e.status === "active" && !reviewedThisPeriod.has(e.id)
-  ).length;
+  const unreviewed =
+    totals?.unreviewed ??
+    employees.filter((e) => e.status === "active" && !reviewedThisPeriod.has(e.id)).length;
 
   return (
     <div className="mx-auto max-w-7xl px-8 py-8">
@@ -649,7 +653,7 @@ export default function HrPage() {
 
       <div className="mb-6 flex gap-4 items-center justify-between">
         <div className="text-sm text-muted">
-          {employees.length} employees in {departments.length} departments
+          {(totals?.headcount ?? employees.length).toLocaleString()} employees in {(totals?.department_count ?? departments.length).toLocaleString()} departments
         </div>
         <div className="flex gap-2">
           <AddDepartmentForm onDepartmentAdded={fetchData} />
@@ -684,7 +688,7 @@ export default function HrPage() {
             <h2 className="text-sm font-semibold text-ink">
               Performance reviews
               <span className="ml-2 text-xs font-normal text-muted">
-                {reviews.length} recorded
+                {(totals?.review_count ?? reviews.length).toLocaleString()} recorded
                 {avgRating != null && ` · ${avgRating.toFixed(1)} average`}
                 {unreviewed > 0 && ` · ${unreviewed} not reviewed this period`}
               </span>

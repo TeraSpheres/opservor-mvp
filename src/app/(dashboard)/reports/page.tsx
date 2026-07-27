@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { ReportDefinition, ReportRun, ReportModule, ReportPeriod } from "@/lib/types";
+import {
+  warehouseTotals,
+  financeTotals,
+  safetyTotals,
+  tripTotals,
+  movementTotals,
+  attendanceTotals,
+} from "@/lib/totals";
 
 const MODULE_LABEL: Record<ReportModule, string> = {
   warehouse: "Warehouse",
@@ -40,106 +48,111 @@ async function runReport(
 ): Promise<{ rows: Row[]; count: number }> {
   const rows: Row[] = [];
   let count = 0;
-  const num = (n: number) => n.toLocaleString();
+  const num = (n: number) => Number(n).toLocaleString();
+  const dp = (n: number, d = 1) => Number(n).toFixed(d);
+  const money = (n: number) =>
+    `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const between = (q: any, col = "date") => q.gte(col, start).lte(col, end);
+  // Every figure below is summed by the database over the full period.
+  // Nothing is derived from a fetched page, so the totals do not change
+  // with how many rows happen to come back.
+  const wants = (m: ReportModule) => module === m || module === "cross_module";
 
-  if (module === "warehouse" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("warehouse_snapshot").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
+  if (wants("warehouse")) {
+    const t = await warehouseTotals(supabase, start, end);
+    const shifts = t?.shifts_recorded ?? 0;
+    count += shifts;
     if (module === "warehouse") {
-      const orders = d.reduce((s: number, r: any) => s + (r.orders_processed ?? 0), 0);
-      const avg = d.length ? d.reduce((s: number, r: any) => s + Number(r.productivity_pct ?? 0), 0) / d.length : 0;
-      rows.push({ label: "Shift snapshots", value: num(d.length) });
-      rows.push({ label: "Orders processed", value: num(orders) });
-      rows.push({ label: "Average productivity", value: `${avg.toFixed(1)}%` });
-    } else rows.push({ label: "Warehouse snapshots", value: num(d.length) });
+      rows.push({ label: "Shift snapshots", value: num(shifts) });
+      rows.push({ label: "Orders processed", value: num(t?.orders_processed ?? 0) });
+      rows.push({ label: "Orders pending", value: num(t?.orders_pending ?? 0) });
+      rows.push({
+        label: "Average productivity",
+        value: t?.avg_productivity != null ? `${dp(t.avg_productivity)}%` : "—",
+      });
+      rows.push({
+        label: "Average dock utilisation",
+        value: t?.avg_dock_util != null ? `${dp(t.avg_dock_util)}%` : "—",
+      });
+    } else {
+      rows.push({ label: "Warehouse snapshots", value: num(shifts) });
+    }
   }
 
-  if (module === "fleet" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("fleet_trip").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
-    const miles = d.reduce((s: number, r: any) => s + Number(r.miles_driven ?? 0), 0);
+  if (wants("fleet")) {
+    const t = await tripTotals(supabase, start, end);
+    const trips = t?.trip_count ?? 0;
+    const miles = t?.total_miles ?? 0;
+    const fuel = t?.total_fuel ?? 0;
+    count += trips;
     if (module === "fleet") {
-      const fuel = d.reduce((s: number, r: any) => s + Number(r.fuel_used ?? 0), 0);
-      rows.push({ label: "Trips logged", value: num(d.length) });
-      rows.push({ label: "Distance", value: `${miles.toFixed(1)} mi` });
-      rows.push({ label: "Fuel used", value: fuel ? `${fuel.toFixed(1)} gal` : "—" });
-      rows.push({ label: "Efficiency", value: fuel ? `${(miles / fuel).toFixed(1)} mpg` : "—" });
-    } else rows.push({ label: "Fleet trips", value: `${num(d.length)} · ${miles.toFixed(0)} mi` });
+      rows.push({ label: "Trips logged", value: num(trips) });
+      rows.push({ label: "Distance", value: `${dp(miles)} mi` });
+      rows.push({ label: "Fuel used", value: fuel ? `${dp(fuel)} gal` : "—" });
+      rows.push({ label: "Efficiency", value: fuel ? `${dp(miles / fuel)} mpg` : "—" });
+    } else {
+      rows.push({ label: "Fleet trips", value: `${num(trips)} · ${dp(miles, 0)} mi` });
+    }
   }
 
-  if (module === "inventory" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("inventory_movement").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
+  if (wants("inventory")) {
+    const t = await movementTotals(supabase, start, end);
+    const moves = t?.movement_count ?? 0;
+    count += moves;
     if (module === "inventory") {
-      const inb = d.filter((r: any) => r.type === "inbound").reduce((s: number, r: any) => s + r.quantity, 0);
-      const out = d.filter((r: any) => r.type === "outbound").reduce((s: number, r: any) => s + r.quantity, 0);
-      rows.push({ label: "Movements", value: num(d.length) });
-      rows.push({ label: "Units received", value: num(inb) });
-      rows.push({ label: "Units shipped", value: num(out) });
-      rows.push({ label: "Net change", value: num(inb - out) });
-    } else rows.push({ label: "Stock movements", value: num(d.length) });
+      rows.push({ label: "Movements", value: num(moves) });
+      rows.push({ label: "Units received", value: num(t?.units_in ?? 0) });
+      rows.push({ label: "Units shipped", value: num(t?.units_out ?? 0) });
+      rows.push({ label: "Net change", value: num(t?.net_change ?? 0) });
+    } else {
+      rows.push({ label: "Stock movements", value: num(moves) });
+    }
   }
 
-  if (module === "finance" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("finance_transaction").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
-    const rev = d.filter((r: any) => r.type === "revenue").reduce((s: number, r: any) => s + Number(r.amount), 0);
-    const exp = d.filter((r: any) => r.type === "expense").reduce((s: number, r: any) => s + Number(r.amount), 0);
+  if (wants("finance")) {
+    const t = await financeTotals(supabase, start, end);
+    count += t?.transaction_count ?? 0;
     if (module === "finance") {
-      rows.push({ label: "Transactions", value: num(d.length) });
-      rows.push({ label: "Revenue", value: `$${rev.toFixed(2)}` });
-      rows.push({ label: "Expenses", value: `$${exp.toFixed(2)}` });
-      rows.push({ label: "Net", value: `$${(rev - exp).toFixed(2)}` });
-    } else rows.push({ label: "Net position", value: `$${(rev - exp).toFixed(2)}` });
+      rows.push({ label: "Transactions", value: num(t?.transaction_count ?? 0) });
+      rows.push({ label: "Revenue", value: money(t?.revenue ?? 0) });
+      rows.push({ label: "Expenses", value: money(t?.expense ?? 0) });
+      rows.push({ label: "Net", value: money(t?.net ?? 0) });
+    } else {
+      rows.push({ label: "Net position", value: money(t?.net ?? 0) });
+    }
   }
 
-  if (module === "hr" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("hr_attendance").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
-    const present = d.filter((r: any) => r.status === "present" || r.status === "remote").length;
+  if (wants("hr")) {
+    const t = await attendanceTotals(supabase, start, end);
+    const records = t?.record_count ?? 0;
+    count += records;
     if (module === "hr") {
-      rows.push({ label: "Attendance records", value: num(d.length) });
-      rows.push({ label: "Present or remote", value: num(present) });
-      rows.push({ label: "Absent", value: num(d.filter((r: any) => r.status === "absent").length) });
+      rows.push({ label: "Attendance records", value: num(records) });
+      rows.push({ label: "Present or remote", value: num(t?.present ?? 0) });
+      rows.push({ label: "Absent", value: num(t?.absent ?? 0) });
+      rows.push({ label: "Late", value: num(t?.late ?? 0) });
       rows.push({
         label: "Attendance rate",
-        value: d.length ? `${((present / d.length) * 100).toFixed(1)}%` : "—",
+        value: records ? `${dp(((t?.present ?? 0) / records) * 100)}%` : "—",
       });
-    } else rows.push({ label: "Attendance records", value: num(d.length) });
+      rows.push({ label: "Hours worked", value: t?.hours_worked ? dp(t.hours_worked) : "—" });
+    } else {
+      rows.push({ label: "Attendance records", value: num(records) });
+    }
   }
 
-  if (module === "safety" || module === "cross_module") {
-    const { data } = await between(
-      supabase.from("safety_incident").select("*").eq("company_id", companyId),
-    );
-    const d = data ?? [];
-    count += d.length;
+  if (wants("safety")) {
+    const t = await safetyTotals(supabase, start, end);
+    const incidents = t?.incident_count ?? 0;
+    count += incidents;
     if (module === "safety") {
-      rows.push({ label: "Incidents", value: num(d.length) });
-      rows.push({ label: "Critical", value: num(d.filter((r: any) => r.severity === "critical").length) });
-      rows.push({ label: "High", value: num(d.filter((r: any) => r.severity === "high").length) });
-      rows.push({
-        label: "Still open",
-        value: num(d.filter((r: any) => r.status === "open" || r.status === "investigating").length),
-      });
-    } else rows.push({ label: "Safety incidents", value: num(d.length) });
+      rows.push({ label: "Incidents", value: num(incidents) });
+      rows.push({ label: "Critical", value: num(t?.critical_count ?? 0) });
+      rows.push({ label: "High", value: num(t?.high_count ?? 0) });
+      rows.push({ label: "Still open", value: num(t?.open_incidents ?? 0) });
+    } else {
+      rows.push({ label: "Safety incidents", value: num(incidents) });
+    }
   }
 
   return { rows, count };

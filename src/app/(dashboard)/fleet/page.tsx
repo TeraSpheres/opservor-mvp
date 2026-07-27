@@ -8,6 +8,8 @@ import type {
   FleetMaintenance,
   VehicleStatus,
   MaintenanceStatus,
+  FleetTotals,
+  MaintenanceTotals,
 } from "@/lib/types";
 import {
   VEHICLE_TYPE_GROUPS,
@@ -16,6 +18,7 @@ import {
   optionCount,
   type OptionGroup,
 } from "@/lib/fleet-options";
+import { fleetTotals, maintenanceTotals } from "@/lib/totals";
 
 const STATUS_STYLES: Record<VehicleStatus, string> = {
   active: "bg-green-500 text-white",
@@ -567,6 +570,8 @@ export default function FleetPage() {
   const [tripCounts, setTripCounts] = useState<Record<string, number>>({});
   const [maintenance, setMaintenance] = useState<FleetMaintenance[]>([]);
   const [maintUnavailable, setMaintUnavailable] = useState(false);
+  const [totals, setTotals] = useState<FleetTotals | null>(null);
+  const [maintTotals, setMaintTotals] = useState<MaintenanceTotals | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
@@ -618,6 +623,10 @@ export default function FleetPage() {
       counts[row.vehicle_id] = (counts[row.vehicle_id] ?? 0) + 1;
     }
     setTripCounts(counts);
+
+    // Headline figures from the database, not from the rows just fetched.
+    setTotals(await fleetTotals(supabase));
+    setMaintTotals(await maintenanceTotals(supabase));
 
     // Maintenance arrives in 0010. If that has not been applied the table is
     // absent, which is a legitimate state rather than an error — the section
@@ -677,26 +686,35 @@ export default function FleetPage() {
     fetchVehicles();
   }
 
-  const fleetMileage = vehicles.reduce((s, v) => s + (v.mileage ?? 0), 0);
-  const activeCount = vehicles.filter((v) => v.status === "active").length;
-  const inMaintenance = vehicles.filter((v) => v.status === "maintenance").length;
+  // Tenant-wide figures come from the database (migration 0011). Falling back
+  // to a sum over the loaded rows keeps the page usable if 0011 is missing,
+  // but that fallback is only ever right for a small tenant — which is the
+  // whole reason the functions exist.
+  const fleetMileage = totals?.total_mileage ?? vehicles.reduce((s, v) => s + (v.mileage ?? 0), 0);
+  const vehicleTotal = totals?.vehicle_count ?? vehicles.length;
+  const activeCount = totals?.active_count ?? vehicles.filter((v) => v.status === "active").length;
+  const inMaintenance = totals?.in_maintenance ?? vehicles.filter((v) => v.status === "maintenance").length;
+  const completedTripTotal =
+    totals?.completed_trips ?? Object.values(tripCounts).reduce((s, c) => s + c, 0);
 
   // Trips recorded but every vehicle still on zero: the mileage trigger from
   // 0009 is not in place yet.
-  const anyCompletedTrips = Object.values(tripCounts).some((c) => c > 0);
-  const mileageLooksUnsynced = anyCompletedTrips && fleetMileage === 0;
+  const mileageLooksUnsynced = completedTripTotal > 0 && fleetMileage === 0;
 
   const totalMiles = trips
     .filter((t) => t.status === "completed")
     .reduce((s, t) => s + t.miles_driven, 0);
 
-  const openMaint = maintenance.filter(
+  const openMaintCount = maintTotals?.open_jobs ?? maintenance.filter(
     (m) => m.status === "scheduled" || m.status === "in_progress"
-  );
-  const overdueMaint = openMaint.filter(
-    (m) => m.scheduled_date != null && m.scheduled_date < todayISO()
-  );
-  const maintSpend = maintenance
+  ).length;
+  const overdueMaintCount = maintTotals?.overdue_jobs ?? maintenance.filter(
+    (m) =>
+      (m.status === "scheduled" || m.status === "in_progress") &&
+      m.scheduled_date != null &&
+      m.scheduled_date < todayISO()
+  ).length;
+  const maintSpend = maintTotals?.total_spend ?? maintenance
     .filter((m) => m.status === "completed")
     .reduce((s, m) => s + (m.cost ?? 0), 0);
   const vehicleMaint = selectedVehicle
@@ -713,13 +731,13 @@ export default function FleetPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <MetricCard label="Vehicles" value={vehicles.length} />
+        <MetricCard label="Vehicles" value={num(vehicleTotal)} />
         <MetricCard label="Active" value={activeCount} note={inMaintenance ? `${inMaintenance} in maintenance` : undefined} />
         <MetricCard label="Fleet mileage" value={num(fleetMileage)} unit="mi" note="From completed trips" />
         <MetricCard
           label="Maintenance open"
-          value={openMaint.length}
-          note={overdueMaint.length ? `${overdueMaint.length} overdue` : "None overdue"}
+          value={openMaintCount}
+          note={overdueMaintCount ? `${overdueMaintCount} overdue` : "None overdue"}
         />
       </div>
 

@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { FinanceCostCenter, FinanceTransaction, FinanceSnapshot } from "@/lib/types";
+import type {
+  FinanceCostCenter,
+  FinanceTransaction,
+  FinanceSnapshot,
+  FinanceTotals,
+} from "@/lib/types";
+import { financeTotals } from "@/lib/totals";
 
 function AddCostCenterForm({ onCostCenterAdded }: { onCostCenterAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -244,6 +250,7 @@ export default function FinancePage() {
   const [costCenters, setCostCenters] = useState<FinanceCostCenter[]>([]);
   const [selectedCostCenter, setSelectedCostCenter] = useState<FinanceCostCenter | null>(null);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [totals, setTotals] = useState<FinanceTotals | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
@@ -274,6 +281,9 @@ export default function FinancePage() {
 
     const centerList = (data ?? []) as FinanceCostCenter[];
     setCostCenters(centerList);
+
+    // Headline figures from the database, not from the rows just fetched.
+    setTotals(await financeTotals(supabase));
     if (centerList.length > 0 && !selectedCostCenter) {
       setSelectedCostCenter(centerList[0]);
       fetchTransactions(centerList[0].id, appUser.company_id);
@@ -304,13 +314,15 @@ export default function FinancePage() {
     }
   }
 
-  const revenue = transactions
+  // Tenant-wide, from finance_totals(). The fallback sums only the rows
+  // currently loaded, which is right for a small tenant and wrong for a real one.
+  const revenue = totals?.revenue ?? transactions
     .filter((t) => t.type === "revenue")
     .reduce((sum, t) => sum + t.amount, 0);
-  const expenses = transactions
+  const expenses = totals?.expense ?? transactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
-  const net = revenue - expenses;
+  const net = totals?.net ?? revenue - expenses;
 
   return (
     <div className="mx-auto max-w-7xl px-8 py-8">

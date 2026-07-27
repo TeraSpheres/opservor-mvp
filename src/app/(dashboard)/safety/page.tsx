@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { SafetyIncident, SafetyInspection, IncidentSeverity } from "@/lib/types";
+import type {
+  SafetyIncident,
+  SafetyInspection,
+  IncidentSeverity,
+  SafetyTotals,
+} from "@/lib/types";
+import { safetyTotals } from "@/lib/totals";
 
 const SEVERITY_STYLE: Record<IncidentSeverity, string> = {
   critical: "bg-red-500 text-white",
@@ -312,6 +318,7 @@ function MetricCard({
 export default function SafetyPage() {
   const [incidents, setIncidents] = useState<SafetyIncident[]>([]);
   const [inspections, setInspections] = useState<SafetyInspection[]>([]);
+  const [totals, setTotals] = useState<SafetyTotals | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -349,11 +356,14 @@ export default function SafetyPage() {
 
     setIncidents((inc.data ?? []) as SafetyIncident[]);
     setInspections((insp.data ?? []) as SafetyInspection[]);
+
+    // Headline figures from the database, not from the rows just fetched.
+    setTotals(await safetyTotals(supabase));
   }
 
   // Derived on read. Once safety_snapshot is populated these come from there.
-  const openCount = incidents.filter((i) => i.status === "open" || i.status === "investigating").length;
-  const criticalCount = incidents.filter((i) => i.severity === "critical").length;
+  const openCount = totals?.open_incidents ?? incidents.filter((i) => i.status === "open" || i.status === "investigating").length;
+  const criticalCount = totals?.critical_count ?? incidents.filter((i) => i.severity === "critical").length;
   const failedInspections = inspections.filter((i) => i.result === "fail").length;
 
   const daysSinceLast = incidents.length

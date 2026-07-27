@@ -152,11 +152,16 @@ function AddEmployeeForm({
   return (
     <>
       {!isOpen ? (
+        // Disabled with a reason, never hidden. This button used to disappear
+        // entirely until a department existed, which left no way to work out
+        // why it was missing.
         <button
           onClick={() => setIsOpen(true)}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-light"
+          disabled={departments.length === 0}
+          title={departments.length === 0 ? "Create a department first" : undefined}
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-light disabled:opacity-40 disabled:hover:bg-brand"
         >
-          Add Employee
+          Add employee
         </button>
       ) : (
         <form onSubmit={handleAddEmployee} className="rounded-xl border border-border bg-panel p-4 space-y-3">
@@ -648,10 +653,28 @@ export default function HrPage() {
         </div>
         <div className="flex gap-2">
           <AddDepartmentForm onDepartmentAdded={fetchData} />
-          {departments.length > 0 && <AddEmployeeForm departments={departments} onEmployeeAdded={fetchData} />}
+          <AddEmployeeForm departments={departments} onEmployeeAdded={fetchData} />
           <RecordReviewForm employees={employees} onRecorded={fetchData} />
         </div>
       </div>
+
+      {/* The three actions have an order — department, then employee, then
+          review — and nothing on screen said so. A disabled button with no
+          explanation is a dead end. */}
+      {!isLoading && (departments.length === 0 || employees.length === 0) && (
+        <div className="mb-6 rounded-xl border border-border bg-panel p-4">
+          <p className="text-sm text-ink">Set up in three steps</p>
+          <ol className="mt-2 space-y-1 text-sm text-muted">
+            <li className={departments.length > 0 ? "line-through opacity-50" : ""}>
+              1. Create a department — employees belong to one
+            </li>
+            <li className={employees.length > 0 ? "line-through opacity-50" : ""}>
+              2. Add an employee
+            </li>
+            <li>3. Record a performance review, and log attendance</li>
+          </ol>
+        </div>
+      )}
 
       <div className="space-y-6">
         <LogAttendanceForm employees={employees} onAttendanceLogged={fetchData} />

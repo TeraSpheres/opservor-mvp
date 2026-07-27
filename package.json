@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:build": "node supabase/seed/build-demo-companies.js",
+    "fake:samsara": "node supabase/seed/fake-samsara.js",
+    "test:samsara": "tsx supabase/seed/test-samsara-connector.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",

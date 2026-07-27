@@ -8,6 +8,12 @@
       "port": 4321
     },
     {
+      "name": "opservor-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3100"],
+      "port": 3100
+    },
+    {
       "name": "brand-assets",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "serve", "-l", "4322", "C:/Users/ahsan/Documents/TeraSpheres_Archive/Design_Assets/Logo_Variations"],

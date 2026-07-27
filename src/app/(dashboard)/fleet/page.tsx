@@ -2,13 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { FleetVehicle, FleetTrip, VehicleStatus } from "@/lib/types";
+import type {
+  FleetVehicle,
+  FleetTrip,
+  FleetMaintenance,
+  VehicleStatus,
+  MaintenanceStatus,
+} from "@/lib/types";
+import {
+  VEHICLE_TYPE_GROUPS,
+  FUEL_TYPE_GROUPS,
+  MAINTENANCE_TYPE_GROUPS,
+  optionCount,
+  type OptionGroup,
+} from "@/lib/fleet-options";
 
 const STATUS_STYLES: Record<VehicleStatus, string> = {
   active: "bg-green-500 text-white",
   maintenance: "bg-amber-500 text-white",
   inactive: "bg-slate-500 text-white",
   retired: "bg-red-500 text-white",
+};
+
+const MAINT_STATUS_STYLES: Record<MaintenanceStatus, string> = {
+  scheduled: "bg-brand text-white",
+  in_progress: "bg-amber-500 text-white",
+  completed: "bg-green-500 text-white",
+  cancelled: "bg-slate-500 text-white",
 };
 
 function StatusBadge({ status }: { status: VehicleStatus }) {
@@ -18,6 +38,50 @@ function StatusBadge({ status }: { status: VehicleStatus }) {
     </span>
   );
 }
+
+function MaintBadge({ status }: { status: MaintenanceStatus }) {
+  return (
+    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${MAINT_STATUS_STYLES[status]}`}>
+      {status.replace("_", " ")}
+    </span>
+  );
+}
+
+/** A select backed by grouped reference data — see lib/fleet-options. */
+function GroupedSelect({
+  name,
+  groups,
+  className,
+  required,
+  placeholder = "Select…",
+  defaultValue = "",
+}: {
+  name: string;
+  groups: OptionGroup[];
+  className?: string;
+  required?: boolean;
+  placeholder?: string;
+  defaultValue?: string;
+}) {
+  return (
+    <select name={name} required={required} defaultValue={defaultValue} className={className}>
+      <option value="" disabled>
+        {placeholder}
+      </option>
+      {groups.map((g) => (
+        <optgroup key={g.label} label={g.label}>
+          {g.options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
 function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -110,7 +174,13 @@ function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
         </div>
         <div>
           <label className={label}>Type</label>
-          <input name="vehicle_type" autoComplete="off" type="text" placeholder="Cargo Van" required className={field} />
+          <GroupedSelect
+            name="vehicle_type"
+            groups={VEHICLE_TYPE_GROUPS}
+            required
+            placeholder="Select vehicle type…"
+            className={field}
+          />
         </div>
         <div>
           <label className={label}>Status</label>
@@ -130,7 +200,12 @@ function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
         </div>
         <div>
           <label className={label}>Fuel type</label>
-          <input name="fuel_type" type="text" placeholder="Diesel, Petrol, Electric" className={field} autoComplete="off" />
+          <GroupedSelect
+            name="fuel_type"
+            groups={FUEL_TYPE_GROUPS}
+            placeholder="Select fuel type…"
+            className={field}
+          />
         </div>
         <div>
           <label className={label}>Purchase date</label>
@@ -274,6 +349,192 @@ function LogTripForm({
   );
 }
 
+function ScheduleMaintenanceForm({
+  vehicle,
+  onScheduled,
+}: {
+  vehicle: FleetVehicle;
+  onScheduled: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<MaintenanceStatus>("scheduled");
+  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+
+    const str = (k: string) => {
+      const v = String(fd.get(k) ?? "").trim();
+      return v === "" ? null : v;
+    };
+    const numOrNull = (k: string) => {
+      const v = String(fd.get(k) ?? "").trim();
+      return v === "" ? null : Number(v);
+    };
+
+    const nextStatus = String(fd.get("maint_status") || "scheduled") as MaintenanceStatus;
+
+    // The table enforces this pairing; catching it here gives a readable
+    // message instead of a constraint violation.
+    const completed = str("completed_date");
+    if (nextStatus === "completed" && !completed) {
+      setError("A completed job needs a completion date.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { error: insertError } = await supabase.from("fleet_maintenance").insert({
+      company_id: vehicle.company_id,
+      vehicle_id: vehicle.id,
+      type: String(fd.get("maint_type")),
+      status: nextStatus,
+      priority: String(fd.get("priority") || "routine"),
+      scheduled_date: str("scheduled_date"),
+      completed_date: nextStatus === "completed" ? completed : null,
+      odometer: numOrNull("odometer"),
+      cost: numOrNull("cost"),
+      vendor: str("vendor"),
+      reference: str("reference"),
+      notes: str("notes"),
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+    } else {
+      form.reset();
+      setStatus("scheduled");
+      setIsOpen(false);
+      onScheduled();
+    }
+    setIsLoading(false);
+  }
+
+  const field =
+    "w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand";
+  const label = "block text-xs font-medium text-muted mb-1";
+
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-panel"
+      >
+        Book maintenance
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-panel p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-ink">Book maintenance — {vehicle.name}</h3>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label className={label}>Work required</label>
+          <GroupedSelect
+            name="maint_type"
+            groups={MAINTENANCE_TYPE_GROUPS}
+            required
+            placeholder="Select work…"
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label}>Status</label>
+          <select
+            name="maint_status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as MaintenanceStatus)}
+            className={field}
+          >
+            <option value="scheduled">scheduled</option>
+            <option value="in_progress">in progress</option>
+            <option value="completed">completed</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+        </div>
+        <div>
+          <label className={label}>Priority</label>
+          <select name="priority" defaultValue="routine" className={field}>
+            <option value="routine">routine</option>
+            <option value="high">high</option>
+            <option value="critical">critical</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label className={label}>Due date</label>
+          <input name="scheduled_date" type="date" defaultValue={todayISO()} className={field} />
+        </div>
+        <div>
+          <label className={label}>Completed on</label>
+          <input
+            name="completed_date"
+            type="date"
+            disabled={status !== "completed"}
+            className={`${field} disabled:opacity-40`}
+          />
+        </div>
+        <div>
+          <label className={label}>Odometer</label>
+          <input name="odometer" type="number" min="0" placeholder="Reading at service" className={field} autoComplete="off" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label className={label}>Cost</label>
+          <input name="cost" type="number" step="0.01" min="0" placeholder="0.00" className={field} autoComplete="off" />
+        </div>
+        <div>
+          <label className={label}>Vendor</label>
+          <input name="vendor" type="text" placeholder="Garage or workshop" className={field} autoComplete="off" />
+        </div>
+        <div>
+          <label className={label}>Work order</label>
+          <input name="reference" type="text" placeholder="Reference number" className={field} autoComplete="off" />
+        </div>
+      </div>
+
+      <div>
+        <label className={label}>Notes</label>
+        <input name="notes" type="text" placeholder="Optional" className={field} autoComplete="off" />
+      </div>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-light disabled:opacity-50"
+        >
+          {isLoading ? "Saving..." : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+            setError(null);
+          }}
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted hover:text-ink"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function MetricCard({
   label,
   value,
@@ -304,6 +565,8 @@ export default function FleetPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<FleetVehicle | null>(null);
   const [trips, setTrips] = useState<FleetTrip[]>([]);
   const [tripCounts, setTripCounts] = useState<Record<string, number>>({});
+  const [maintenance, setMaintenance] = useState<FleetMaintenance[]>([]);
+  const [maintUnavailable, setMaintUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
@@ -355,6 +618,23 @@ export default function FleetPage() {
       counts[row.vehicle_id] = (counts[row.vehicle_id] ?? 0) + 1;
     }
     setTripCounts(counts);
+
+    // Maintenance arrives in 0010. If that has not been applied the table is
+    // absent, which is a legitimate state rather than an error — the section
+    // says so instead of the page failing.
+    const { data: maintRows, error: maintError } = await supabase
+      .from("fleet_maintenance")
+      .select("*")
+      .eq("company_id", appUser.company_id)
+      .order("scheduled_date", { ascending: true, nullsFirst: false });
+
+    if (maintError) {
+      setMaintUnavailable(true);
+      setMaintenance([]);
+    } else {
+      setMaintUnavailable(false);
+      setMaintenance((maintRows ?? []) as FleetMaintenance[]);
+    }
 
     setSelectedVehicle((current) => {
       if (current) {
@@ -410,18 +690,37 @@ export default function FleetPage() {
     .filter((t) => t.status === "completed")
     .reduce((s, t) => s + t.miles_driven, 0);
 
+  const openMaint = maintenance.filter(
+    (m) => m.status === "scheduled" || m.status === "in_progress"
+  );
+  const overdueMaint = openMaint.filter(
+    (m) => m.scheduled_date != null && m.scheduled_date < todayISO()
+  );
+  const maintSpend = maintenance
+    .filter((m) => m.status === "completed")
+    .reduce((s, m) => s + (m.cost ?? 0), 0);
+  const vehicleMaint = selectedVehicle
+    ? maintenance.filter((m) => m.vehicle_id === selectedVehicle.id)
+    : [];
+
   return (
     <div className="mx-auto max-w-7xl px-8 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-ink">Fleet Operations</h1>
-        <p className="text-sm text-muted">Vehicle registry, trip log and utilisation</p>
+        <p className="text-sm text-muted">
+          Vehicle registry, trip log, maintenance and utilisation
+        </p>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         <MetricCard label="Vehicles" value={vehicles.length} />
         <MetricCard label="Active" value={activeCount} note={inMaintenance ? `${inMaintenance} in maintenance` : undefined} />
         <MetricCard label="Fleet mileage" value={num(fleetMileage)} unit="mi" note="From completed trips" />
-        <MetricCard label="Trips logged" value={num(Object.values(tripCounts).reduce((s, c) => s + c, 0))} />
+        <MetricCard
+          label="Maintenance open"
+          value={openMaint.length}
+          note={overdueMaint.length ? `${overdueMaint.length} overdue` : "None overdue"}
+        />
       </div>
 
       {mileageLooksUnsynced && (
@@ -506,6 +805,78 @@ export default function FleetPage() {
           </div>
 
           <LogTripForm vehicle={selectedVehicle} onTripLogged={handleTripLogged} />
+
+          {maintUnavailable ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+              <p className="text-sm text-amber-300">Maintenance is not available on this database.</p>
+              <p className="mt-1 text-xs text-muted">
+                Migration 0010 creates the fleet_maintenance table. It has not been applied yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-sm font-semibold text-ink">
+                  Maintenance
+                  <span className="ml-2 text-xs font-normal text-muted">
+                    {vehicleMaint.length} record{vehicleMaint.length === 1 ? "" : "s"}
+                    {maintSpend > 0 && ` · ${num(Math.round(maintSpend))} spent fleet-wide`}
+                  </span>
+                </h2>
+                <ScheduleMaintenanceForm vehicle={selectedVehicle} onScheduled={fetchVehicles} />
+              </div>
+
+              {vehicleMaint.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-border">
+                  <table className="w-full min-w-[760px] text-sm">
+                    <thead className="bg-panel">
+                      <tr className="text-left text-xs text-muted">
+                        <th className="px-4 py-3 font-medium">Work</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium">Priority</th>
+                        <th className="px-4 py-3 font-medium">Due</th>
+                        <th className="px-4 py-3 font-medium">Completed</th>
+                        <th className="px-4 py-3 font-medium">Vendor</th>
+                        <th className="px-4 py-3 text-right font-medium">Odometer</th>
+                        <th className="px-4 py-3 text-right font-medium">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vehicleMaint.map((m) => {
+                        const overdue =
+                          (m.status === "scheduled" || m.status === "in_progress") &&
+                          m.scheduled_date != null &&
+                          m.scheduled_date < todayISO();
+                        return (
+                          <tr key={m.id} className="border-t border-border">
+                            <td className="px-4 py-3 font-medium text-ink">{m.type}</td>
+                            <td className="px-4 py-3"><MaintBadge status={m.status} /></td>
+                            <td className="px-4 py-3 text-muted">{m.priority}</td>
+                            <td className={`px-4 py-3 ${overdue ? "font-medium text-red-400" : "text-muted"}`}>
+                              {m.scheduled_date ?? "—"}
+                              {overdue && " · overdue"}
+                            </td>
+                            <td className="px-4 py-3 text-muted">{m.completed_date ?? "—"}</td>
+                            <td className="px-4 py-3 text-muted">{m.vendor ?? "—"}</td>
+                            <td className="px-4 py-3 text-right text-muted">
+                              {m.odometer != null ? num(m.odometer) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right text-ink">
+                              {m.cost != null ? m.cost.toFixed(2) : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-panel p-6 text-center text-sm text-muted">
+                  No maintenance recorded for this vehicle.
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <MetricCard label="Trips shown" value={trips.length} note="Most recent 10" />

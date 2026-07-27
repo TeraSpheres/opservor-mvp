@@ -124,6 +124,29 @@ export interface FleetTrip {
   updated_at: string;
 }
 
+export type MaintenanceStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
+export type MaintenancePriority = "routine" | "high" | "critical";
+
+export interface FleetMaintenance {
+  id: string;
+  company_id: string;
+  vehicle_id: string;
+  /** Free text, chosen from MAINTENANCE_TYPE_GROUPS in lib/fleet-options. */
+  type: string;
+  status: MaintenanceStatus;
+  priority: MaintenancePriority;
+  scheduled_date: string | null; // YYYY-MM-DD
+  completed_date: string | null; // YYYY-MM-DD
+  /** Reading taken at service — distinct from the trip-derived vehicle mileage. */
+  odometer: number | null;
+  cost: number | null;
+  vendor: string | null;
+  reference: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FleetMetrics {
   id: string;
   company_id: string;

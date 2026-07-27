@@ -207,7 +207,7 @@ function NewReportForm({ onCreated }: { onCreated: () => void }) {
       <h3 className="text-sm font-semibold text-ink">Define a report</h3>
 
       <input
-        name="name"
+        name="report_name" autoComplete="off"
         type="text"
         placeholder="Report name, e.g. Monthly fleet summary"
         required
@@ -250,8 +250,7 @@ function NewReportForm({ onCreated }: { onCreated: () => void }) {
         name="description"
         type="text"
         placeholder="Description (optional)"
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-      />
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
 
       <div className="flex gap-2">
         <button

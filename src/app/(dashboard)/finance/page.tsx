@@ -14,7 +14,7 @@ function AddCostCenterForm({ onCostCenterAdded }: { onCostCenterAdded: () => voi
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name"));
+    const name = String(formData.get("cost_center_name"));
     const code = String(formData.get("code"));
     const budget_ytd = Number(formData.get("budget_ytd") || 0);
 
@@ -61,7 +61,7 @@ function AddCostCenterForm({ onCostCenterAdded }: { onCostCenterAdded: () => voi
       ) : (
         <form onSubmit={handleAddCostCenter} className="rounded-xl border border-border bg-panel p-4 space-y-3">
           <input
-            name="name"
+            name="cost_center_name" autoComplete="off"
             type="text"
             placeholder="Cost center name (e.g., Operations)"
             required
@@ -72,8 +72,7 @@ function AddCostCenterForm({ onCostCenterAdded }: { onCostCenterAdded: () => voi
             type="text"
             placeholder="Code (e.g., OPS-001)"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <input
             name="budget_ytd"
             type="number"
@@ -182,8 +181,7 @@ function LogTransactionForm({
             type="text"
             placeholder="e.g., Salaries, Equipment"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         </div>
         <div>
           <label className="block text-xs font-medium text-muted mb-1">Amount</label>
@@ -201,15 +199,13 @@ function LogTransactionForm({
         name="description"
         type="text"
         placeholder="Description (optional)"
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-      />
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
 
       <input
         name="reference"
         type="text"
         placeholder="Reference (Invoice, PO, etc.)"
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-      />
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
 
       <button
         type="submit"

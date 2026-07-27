@@ -66,7 +66,7 @@ export default function AlertsPanel({ alerts }: { alerts: Alert[] }) {
         </summary>
         <form action={createAlert} className="mt-3 space-y-2">
           <input
-            name="title"
+            name="alert_title" autoComplete="off"
             placeholder="Title"
             required
             className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"

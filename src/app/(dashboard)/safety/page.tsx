@@ -122,8 +122,7 @@ function LogIncidentForm({ onLogged }: { onLogged: () => void }) {
             type="text"
             placeholder="e.g. Slip, Equipment, Vehicle"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         </div>
         <div>
           <label className="block text-xs font-medium text-muted mb-1">Location</label>
@@ -131,8 +130,7 @@ function LogIncidentForm({ onLogged }: { onLogged: () => void }) {
             name="location"
             type="text"
             placeholder="Site or area"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         </div>
       </div>
 
@@ -161,8 +159,7 @@ function LogIncidentForm({ onLogged }: { onLogged: () => void }) {
         name="reported_by"
         type="text"
         placeholder="Reported by (optional)"
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-      />
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
 
       <div className="flex gap-2">
         <button
@@ -251,8 +248,7 @@ function LogInspectionForm({ onLogged }: { onLogged: () => void }) {
             type="text"
             placeholder="e.g. Loading dock"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         </div>
         <div>
           <label className="block text-xs font-medium text-muted mb-1">Result</label>
@@ -274,14 +270,12 @@ function LogInspectionForm({ onLogged }: { onLogged: () => void }) {
           name="inspector"
           type="text"
           placeholder="Inspector (optional)"
-          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         <input
           name="findings"
           type="text"
           placeholder="Findings (optional)"
-          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
       </div>
 
       <button

@@ -63,8 +63,8 @@ function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
     // trips, so anything typed here would be overwritten on the next trip.
     const { error: insertError } = await supabase.from("fleet_vehicle").insert({
       company_id: appUser.company_id,
-      name: String(formData.get("name")),
-      type: String(formData.get("type")),
+      name: String(formData.get("vehicle_name")),
+      type: String(formData.get("vehicle_type")),
       status: String(formData.get("status") || "active"),
       license_plate: str("license_plate"),
       fuel_type: str("fuel_type"),
@@ -106,11 +106,11 @@ function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
           <label className={label}>Name</label>
-          <input name="name" type="text" placeholder="Truck #1" required className={field} />
+          <input name="vehicle_name" autoComplete="off" type="text" placeholder="Truck #1" required className={field} />
         </div>
         <div>
           <label className={label}>Type</label>
-          <input name="type" type="text" placeholder="Cargo Van" required className={field} />
+          <input name="vehicle_type" autoComplete="off" type="text" placeholder="Cargo Van" required className={field} />
         </div>
         <div>
           <label className={label}>Status</label>
@@ -126,11 +126,11 @@ function AddVehicleForm({ onVehicleAdded }: { onVehicleAdded: () => void }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
           <label className={label}>Licence plate</label>
-          <input name="license_plate" type="text" placeholder="Optional" className={field} />
+          <input name="license_plate" type="text" placeholder="Optional" className={field} autoComplete="off" />
         </div>
         <div>
           <label className={label}>Fuel type</label>
-          <input name="fuel_type" type="text" placeholder="Diesel, Petrol, Electric" className={field} />
+          <input name="fuel_type" type="text" placeholder="Diesel, Petrol, Electric" className={field} autoComplete="off" />
         </div>
         <div>
           <label className={label}>Purchase date</label>
@@ -249,11 +249,11 @@ function LogTripForm({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className={label}>Origin</label>
-          <input name="origin" type="text" placeholder="Warehouse A" className={field} />
+          <input name="origin" type="text" placeholder="Warehouse A" className={field} autoComplete="off" />
         </div>
         <div>
           <label className={label}>Destination</label>
-          <input name="destination" type="text" placeholder="Customer site" className={field} />
+          <input name="destination" type="text" placeholder="Customer site" className={field} autoComplete="off" />
         </div>
       </div>
 

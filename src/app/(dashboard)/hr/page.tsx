@@ -14,7 +14,7 @@ function AddDepartmentForm({ onDepartmentAdded }: { onDepartmentAdded: () => voi
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name"));
+    const name = String(formData.get("department_name"));
     const code = String(formData.get("code"));
 
     const {
@@ -59,7 +59,7 @@ function AddDepartmentForm({ onDepartmentAdded }: { onDepartmentAdded: () => voi
       ) : (
         <form onSubmit={handleAddDepartment} className="rounded-xl border border-border bg-panel p-4 space-y-3">
           <input
-            name="name"
+            name="department_name" autoComplete="off"
             type="text"
             placeholder="Department name (e.g., Engineering)"
             required
@@ -70,8 +70,7 @@ function AddDepartmentForm({ onDepartmentAdded }: { onDepartmentAdded: () => voi
             type="text"
             placeholder="Code (e.g., ENG)"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <div className="flex gap-2">
             <button
               type="submit"
@@ -110,8 +109,8 @@ function AddEmployeeForm({
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name"));
-    const email = String(formData.get("email"));
+    const name = String(formData.get("employee_name"));
+    const email = String(formData.get("employee_email"));
     const role = String(formData.get("role"));
     const department_id = String(formData.get("department_id"));
     const hire_date = String(formData.get("hire_date"));
@@ -162,14 +161,14 @@ function AddEmployeeForm({
       ) : (
         <form onSubmit={handleAddEmployee} className="rounded-xl border border-border bg-panel p-4 space-y-3">
           <input
-            name="name"
+            name="employee_name" autoComplete="off"
             type="text"
             placeholder="Employee name"
             required
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
           />
           <input
-            name="email"
+            name="employee_email" autoComplete="off"
             type="email"
             placeholder="Email"
             required
@@ -180,8 +179,7 @@ function AddEmployeeForm({
             type="text"
             placeholder="Job title (e.g., Senior Engineer)"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <select
             name="department_id"
             required

@@ -15,7 +15,7 @@ function AddSkuForm({ onSkuAdded }: { onSkuAdded: () => void }) {
 
     const formData = new FormData(e.currentTarget);
     const sku = String(formData.get("sku"));
-    const name = String(formData.get("name"));
+    const name = String(formData.get("product_name"));
     const category = String(formData.get("category") || "");
 
     const {
@@ -67,10 +67,9 @@ function AddSkuForm({ onSkuAdded }: { onSkuAdded: () => void }) {
             type="text"
             placeholder="SKU code"
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <input
-            name="name"
+            name="product_name" autoComplete="off"
             type="text"
             placeholder="Product name"
             required
@@ -80,8 +79,7 @@ function AddSkuForm({ onSkuAdded }: { onSkuAdded: () => void }) {
             name="category"
             type="text"
             placeholder="Category (optional)"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <div className="flex gap-2">
             <button
               type="submit"
@@ -197,8 +195,7 @@ function LogMovementForm({
             name="reference"
             type="text"
             placeholder="Optional"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
         </div>
       </div>
 

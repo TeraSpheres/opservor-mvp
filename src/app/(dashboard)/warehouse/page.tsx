@@ -14,7 +14,7 @@ function WarehouseSiteForm({ onSiteAdded }: { onSiteAdded: () => void }) {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name"));
+    const name = String(formData.get("site_name"));
     const location = String(formData.get("location") || "");
 
     const {
@@ -59,7 +59,7 @@ function WarehouseSiteForm({ onSiteAdded }: { onSiteAdded: () => void }) {
       ) : (
         <form onSubmit={handleAddSite} className="rounded-xl border border-border bg-panel p-4 space-y-3">
           <input
-            name="name"
+            name="site_name" autoComplete="off"
             type="text"
             placeholder="Site name"
             required
@@ -69,8 +69,7 @@ function WarehouseSiteForm({ onSiteAdded }: { onSiteAdded: () => void }) {
             name="location"
             type="text"
             placeholder="Location (optional)"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand"
-          />
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand" autoComplete="off" />
           <div className="flex gap-2">
             <button
               type="submit"

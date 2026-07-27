@@ -499,3 +499,74 @@ export interface ErpLog {
   duration_seconds: number | null;
   created_at: string; // ISO 8601
 }
+
+/* ------------------------------------------------------------------ *
+ * Module totals — returned by the RPCs in migration 0011.
+ *
+ * These are computed in the database, not by summing a fetched page.
+ * Above 1000 rows PostgREST returns a truncated set by default, so a
+ * client-side sum silently understates. Aggregates live server-side and
+ * lists paginate independently.
+ * ------------------------------------------------------------------ */
+
+export interface InventoryTotals {
+  sku_count: number;
+  units_on_hand: number;
+  units_reserved: number;
+  stock_value: number;
+  low_stock_count: number;
+  out_of_stock: number;
+}
+
+export interface FleetTotals {
+  vehicle_count: number;
+  active_count: number;
+  in_maintenance: number;
+  total_mileage: number;
+  completed_trips: number;
+  total_miles: number;
+  total_fuel: number;
+}
+
+export interface MaintenanceTotals {
+  total_jobs: number;
+  open_jobs: number;
+  overdue_jobs: number;
+  completed_jobs: number;
+  total_spend: number;
+}
+
+export interface FinanceTotals {
+  cost_center_count: number;
+  revenue: number;
+  expense: number;
+  net: number;
+  transaction_count: number;
+}
+
+export interface HrTotals {
+  department_count: number;
+  headcount: number;
+  active_count: number;
+  review_count: number;
+  avg_rating: number | null;
+  unreviewed: number;
+}
+
+export interface WarehouseTotals {
+  site_count: number;
+  shifts_recorded: number;
+  orders_processed: number;
+  orders_pending: number;
+  avg_productivity: number | null;
+  avg_dock_util: number | null;
+}
+
+export interface SafetyTotals {
+  incident_count: number;
+  open_incidents: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+}

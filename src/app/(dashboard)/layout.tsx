@@ -2,6 +2,18 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 
+/* This layout renders which tenant you are signed in to, so it must never be
+ * served from a cache. Next.js will happily reuse a rendered layout, and a
+ * cached one here means the sidebar keeps naming a company you are no longer
+ * looking at — which is exactly what happened after switching tenants in the
+ * database: the data changed, the panel did not.
+ *
+ * Getting this wrong on a multi-tenant product is worse than a stale label.
+ * A cached shell is one step away from showing one customer another
+ * customer's name. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DashboardGroupLayout({
   children,
 }: {

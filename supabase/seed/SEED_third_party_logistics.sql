@@ -18,6 +18,43 @@
 
 begin;
 
+-- Refuse to run if anyone's login is currently pointed at this company.
+--
+-- app_user.company_id references company(id) ON DELETE CASCADE, so deleting
+-- the company below would delete their user record with it. They would still
+-- be able to sign in — authentication lives elsewhere — but the app would no
+-- longer know which company they belong to, and every screen would come up
+-- empty with no obvious cause.
+--
+-- Better to stop here with an instruction than to break someone's login while
+-- reporting success.
+do $$
+declare
+  v_id    uuid;
+  v_users text;
+begin
+  select id into v_id from company where name = 'Cascade Logistics Group (DEMO)';
+  if v_id is null then
+    return;   -- first run; nothing to protect
+  end if;
+
+  select string_agg(email, ', ') into v_users from app_user where company_id = v_id;
+
+  if v_users is not null then
+    raise exception
+      E'Cannot replace this demo company — % is currently viewing it.\n'
+      '\n'
+      'Point your login at a different company first, then run this again:\n'
+      '\n'
+      '  update app_user\n'
+      '     set company_id = (select id from company where name = ''Your Company'')\n'
+      '   where email = ''%'';\n'
+      '\n'
+      'If your login has already been lost, run REPAIR_my_login.sql.',
+      v_users, v_users;
+  end if;
+end $$;
+
 -- Re-runnable: drop the previous copy of this demo tenant. Cascade removes
 -- every row that belonged to it.
 delete from company where name = 'Cascade Logistics Group (DEMO)';

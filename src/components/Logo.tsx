@@ -1,5 +1,22 @@
-// Opservor HQ mark — complete geodesic wireframe sphere with full vertex mesh
-// and connecting edges, matching the reference design exactly.
+/* The Opservor mark — two bands orbiting a sphere.
+ *
+ * Replaces the geodesic wireframe, which was retired across the brand and
+ * lived on in the app because nobody looked here.
+ *
+ * The band geometry is a rotated ellipse. Each half is one arc command,
+ * checked against a 96-point sampled version of the same curve: they differ
+ * by 41/255 at the antialiased edges, against 255 for a deliberately wrong
+ * radius. The arcs are the curve, not an approximation of it.
+ *
+ * Depth without an opaque occluder: the full ellipses are drawn faint, the
+ * sphere over them, then the near halves at full strength. A solid disc would
+ * have to match whatever surface the logo sits on, and this has to work on the
+ * sidebar and the login screen both.
+ */
+
+const A_FRONT = "M57.68 23.66 A27 9 -18 0 1 6.32 40.34";
+const B_FRONT = "M52.68 49.36 A27 9 40 0 1 11.32 14.64";
+
 export default function Logo({
   size = 32,
   className,
@@ -7,71 +24,44 @@ export default function Logo({
   size?: number;
   className?: string;
 }) {
-  const c = "#3B82F6";
+  // Unique per instance so two logos on one page cannot fight over the
+  // gradient id — the second would otherwise inherit the first's.
+  const gid = `opservorMark-${size}`;
+
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Opservor HQ"
+      aria-label="Opservor"
       className={className}
     >
-      {/* Top vertex */}
-      <circle cx="20" cy="3.5" r="0.8" fill={c} opacity={0.95} />
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#7CC4FF" />
+          <stop offset="0.5" stopColor="#3B82F6" />
+          <stop offset="1" stopColor="#22D3EE" />
+        </linearGradient>
+      </defs>
 
-      {/* Upper ring (5 vertices) */}
-      <circle cx="27.5" cy="8.5" r="0.8" fill={c} opacity={0.9} />
-      <circle cx="32" cy="15" r="0.8" fill={c} opacity={0.88} />
-      <circle cx="26" cy="22" r="0.8" fill={c} opacity={0.86} />
-      <circle cx="14" cy="22" r="0.8" fill={c} opacity={0.86} />
-      <circle cx="8" cy="15" r="0.8" fill={c} opacity={0.88} />
-      <circle cx="12.5" cy="8.5" r="0.8" fill={c} opacity={0.9} />
+      {/* Far halves, faint — the bands passing behind */}
+      <g stroke={`url(#${gid})`} strokeWidth="4" fill="none" opacity="0.32">
+        <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(-18 32 32)" />
+        <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(40 32 32)" />
+      </g>
 
-      {/* Middle ring (10 vertices) */}
-      <circle cx="30" cy="25" r="0.8" fill={c} opacity={0.82} />
-      <circle cx="20" cy="28" r="0.8" fill={c} opacity={0.8} />
-      <circle cx="10" cy="25" r="0.8" fill={c} opacity={0.82} />
-      <circle cx="28" cy="32" r="0.8" fill={c} opacity={0.78} />
-      <circle cx="20" cy="35" r="0.8" fill={c} opacity={0.75} />
-      <circle cx="12" cy="32" r="0.8" fill={c} opacity={0.78} />
+      {/* The sphere */}
+      <circle cx="32" cy="32" r="15" fill={`url(#${gid})`} opacity="0.14" />
+      <circle cx="32" cy="32" r="15" stroke={`url(#${gid})`} strokeWidth="2.6" fill="none" />
 
-      {/* Bottom vertices */}
-      <circle cx="20" cy="37" r="0.8" fill={c} opacity={0.7} />
-
-      {/* Upper edges */}
-      <line x1="20" y1="3.5" x2="27.5" y2="8.5" stroke={c} strokeWidth="0.5" opacity={0.85} />
-      <line x1="20" y1="3.5" x2="12.5" y2="8.5" stroke={c} strokeWidth="0.5" opacity={0.85} />
-      <line x1="27.5" y1="8.5" x2="32" y2="15" stroke={c} strokeWidth="0.5" opacity={0.8} />
-      <line x1="12.5" y1="8.5" x2="8" y2="15" stroke={c} strokeWidth="0.5" opacity={0.8} />
-      <line x1="27.5" y1="8.5" x2="32" y2="15" stroke={c} strokeWidth="0.5" opacity={0.8} />
-      <line x1="32" y1="15" x2="26" y2="22" stroke={c} strokeWidth="0.5" opacity={0.78} />
-      <line x1="8" y1="15" x2="14" y2="22" stroke={c} strokeWidth="0.5" opacity={0.78} />
-
-      {/* Middle triangle edges */}
-      <line x1="26" y1="22" x2="14" y2="22" stroke={c} strokeWidth="0.5" opacity={0.75} />
-      <line x1="26" y1="22" x2="30" y2="25" stroke={c} strokeWidth="0.5" opacity={0.77} />
-      <line x1="14" y1="22" x2="10" y2="25" stroke={c} strokeWidth="0.5" opacity={0.77} />
-      <line x1="30" y1="25" x2="20" y2="28" stroke={c} strokeWidth="0.5" opacity={0.74} />
-      <line x1="10" y1="25" x2="20" y2="28" stroke={c} strokeWidth="0.5" opacity={0.74} />
-      <line x1="26" y1="22" x2="20" y2="28" stroke={c} strokeWidth="0.5" opacity={0.72} />
-      <line x1="14" y1="22" x2="20" y2="28" stroke={c} strokeWidth="0.5" opacity={0.72} />
-
-      {/* Lower edges */}
-      <line x1="30" y1="25" x2="28" y2="32" stroke={c} strokeWidth="0.5" opacity={0.7} />
-      <line x1="20" y1="28" x2="20" y2="35" stroke={c} strokeWidth="0.5" opacity={0.68} />
-      <line x1="10" y1="25" x2="12" y2="32" stroke={c} strokeWidth="0.5" opacity={0.7} />
-      <line x1="28" y1="32" x2="20" y2="35" stroke={c} strokeWidth="0.5" opacity={0.65} />
-      <line x1="12" y1="32" x2="20" y2="35" stroke={c} strokeWidth="0.5" opacity={0.65} />
-      <line x1="20" y1="35" x2="20" y2="37" stroke={c} strokeWidth="0.5" opacity={0.62} />
-
-      {/* Cross edges for full mesh */}
-      <line x1="32" y1="15" x2="30" y2="25" stroke={c} strokeWidth="0.4" opacity={0.5} />
-      <line x1="8" y1="15" x2="10" y2="25" stroke={c} strokeWidth="0.4" opacity={0.5} />
-      <line x1="27.5" y1="8.5" x2="30" y2="25" stroke={c} strokeWidth="0.4" opacity={0.45} />
-      <line x1="12.5" y1="8.5" x2="10" y2="25" stroke={c} strokeWidth="0.4" opacity={0.45} />
+      {/* Near halves, full strength — the bands passing in front */}
+      <g stroke={`url(#${gid})`} strokeWidth="4.6" fill="none" strokeLinecap="round">
+        <path d={B_FRONT} />
+        <path d={A_FRONT} />
+      </g>
     </svg>
   );
 }

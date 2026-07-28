@@ -303,7 +303,7 @@ ${p.sites.map(([n, l]) => `    ('${n}', '${l}')`).join(',\n')}
     round((61 + ((d * 11 + ws.ord * 19) % 34))::numeric, 2)
   from generate_series(0, v_days - 1) as d
   cross join (
-    select id, row_number() over (order by name) as ord
+    select id, row_number() over (order by name)::int as ord
     from warehouse_site where company_id = v_company
   ) as ws;
 
@@ -322,7 +322,7 @@ ${p.sites.map(([n, l]) => `    ('${n}', '${l}')`).join(',\n')}
     current_date - (400 + (v.rn * 53) % 1800),
     0
   from (
-    select vtype, fuel, n, row_number() over () as rn
+    select vtype, fuel, n, row_number() over ()::int as rn
     from (values
 ${vehicleRows.map(([t, f, n]) => `      ('${t}', '${f}', ${n})`).join(',\n')}
     ) as x(vtype, fuel, n)
@@ -343,7 +343,7 @@ ${vehicleRows.map(([t, f, n]) => `      ('${t}', '${f}', ${n})`).join(',\n')}
     case when (d + fv.ord) % 19 = 0 then 'cancelled' else 'completed' end
   from generate_series(0, v_days - 1) as d
   cross join (
-    select id, row_number() over (order by name) as ord
+    select id, row_number() over (order by name)::int as ord
     from fleet_vehicle
     where company_id = v_company and status = 'active'
   ) as fv
@@ -370,7 +370,7 @@ ${vehicleRows.map(([t, f, n]) => `      ('${t}', '${f}', ${n})`).join(',\n')}
       'Depot Workshop ' || (1 + (fv.ord % 3)),
       'WO-' || lpad(((fv.ord * 10) + k)::text, 5, '0')
     from (
-      select id, row_number() over (order by name) as ord
+      select id, row_number() over (order by name)::int as ord
       from fleet_vehicle where company_id = v_company
     ) as fv
     cross join generate_series(1, 3) as k
@@ -420,7 +420,7 @@ ${p.skuGroups.map(([pre, lab, cost]) => `      ('${pre}', '${lab}', ${cost})`).j
     current_date - d
   from generate_series(0, v_days - 1) as d
   cross join (
-    select id, row_number() over (order by sku) as ord
+    select id, row_number() over (order by sku)::int as ord
     from inventory_sku where company_id = v_company limit 300
   ) as s
   where (d + s.ord) % 7 = 0;
@@ -448,7 +448,7 @@ ${p.costCentres.map(([n, c, b], i) => `    ('${n}', '${c}', '${FIRST[i * 3 % FIR
     'TXN-' || lpad(((d * 20) + cc.ord)::text, 6, '0')
   from generate_series(0, v_days - 1) as d
   cross join (
-    select id, row_number() over (order by code) as ord
+    select id, row_number() over (order by code)::int as ord
     from finance_cost_center where company_id = v_company
   ) as cc
   where (d + cc.ord) % 2 = 0;
@@ -467,7 +467,7 @@ ${p.costCentres.map(([n, c, b], i) => `    ('${n}', '${c}', '${FIRST[i * 3 % FIR
     round((6.5 + ((d + e.ord) % 4))::numeric, 2)
   from generate_series(0, 29) as d
   cross join (
-    select id, row_number() over (order by name) as ord
+    select id, row_number() over (order by name)::int as ord
     from hr_employee where company_id = v_company and status = 'active'
   ) as e;
 
@@ -483,7 +483,7 @@ ${p.costCentres.map(([n, c, b], i) => `    ('${n}', '${c}', '${FIRST[i * 3 % FIR
     'Recorded as part of the quarterly review cycle.',
     'Line Manager'
   from (
-    select id, row_number() over (order by name) as ord
+    select id, row_number() over (order by name)::int as ord
     from hr_employee where company_id = v_company and status = 'active'
   ) as e
   where e.ord % 4 <> 0;

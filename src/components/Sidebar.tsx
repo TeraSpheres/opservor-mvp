@@ -20,8 +20,19 @@ const NAV_ITEMS = [
   { href: "/reports", label: "Reports", live: true },
 ];
 
-export default function Sidebar({ userName }: { userName: string }) {
+export default function Sidebar({
+  userName,
+  companyName,
+}: {
+  userName: string;
+  companyName?: string | null;
+}) {
   const pathname = usePathname();
+
+  // Seeded companies carry (DEMO) in the name. Flagging that in the interface
+  // means a screenshot can never be mistaken for a real customer's data.
+  const isDemo = Boolean(companyName && /\(DEMO\)/i.test(companyName));
+  const displayName = companyName?.replace(/\s*\(DEMO\)\s*/i, "").trim();
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-panel">
@@ -32,6 +43,20 @@ export default function Sidebar({ userName }: { userName: string }) {
           <p className="text-xs text-muted leading-none mt-1">v1.3</p>
         </div>
       </div>
+
+      {companyName && (
+        <div className="mx-3 mb-3 rounded-md border border-border bg-surface px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted">Viewing</p>
+          <p className="mt-0.5 truncate text-sm font-medium text-ink" title={companyName}>
+            {displayName || companyName}
+          </p>
+          {isDemo && (
+            <span className="mt-1 inline-block rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              DEMO DATA
+            </span>
+          )}
+        </div>
+      )}
 
       <nav className="flex-1 space-y-0.5 px-3">
         {NAV_ITEMS.map((item) => {

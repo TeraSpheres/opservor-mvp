@@ -1,0 +1,102 @@
+# Deploy to Vercel on every push to main.
+#
+# Vercel's own Git integration stopped firing. It was switched off under Manage
+# Projects, and turning it back on, disconnecting and reconnecting all failed to
+# start it again. The result was 53 commits over four days that never deployed,
+# while the live app quietly served old code and nothing anywhere said so.
+#
+# This does the same job from GitHub's side instead. The advantage is not that
+# it is more reliable in principle — it is that when it fails it fails loudly,
+# with a red mark on the commit and a log you can read. The failure mode we hit
+# was silence, and silence is what made it cost four days.
+#
+# One-time setup:
+#   1. Vercel  → account menu → Settings → Tokens → Create Token
+#                Scope it to the Opservor-HQ team. Copy it.
+#   2. GitHub  → this repo → Settings → Secrets and variables → Actions
+#                → New repository secret
+#                Name:  VERCEL_TOKEN
+#                Value: the token
+#
+# The two ids below are identifiers, not secrets — they appear in .vercel and
+# in deployment URLs. Only the token needs protecting.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Lets you deploy by hand from the Actions tab without pushing anything.
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: team_gHUx5Fz8lnBPm8HxCXqu5nHE
+  VERCEL_PROJECT_ID: prj_DCjbSP5F2xUtxc8Zxu9qa3z3B8lM
+
+# A newer push makes an older deploy pointless. Cancel it rather than race.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Typecheck before deploying. A build that compiles but has type errors
+      # is not something to put in front of anyone.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Pulls the project's environment variables — Supabase keys included —
+      # so the build has what it needs without any of it living in this file.
+      - name: Fetch project settings
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url"
+
+      # Proves the deploy is actually serving, rather than trusting that the
+      # command exiting zero means anyone can reach it.
+      - name: Verify it responds
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://opservor-mvp.vercel.app/login)
+            if [ "$code" = "200" ]; then
+              echo "Live and responding ($code)"
+              exit 0
+            fi
+            echo "  attempt $i: got $code"
+            sleep 6
+          done
+          echo "Deployed but the site is not responding — check Vercel."
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deployment"
+            echo ""
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- URL: ${{ steps.deploy.outputs.url }}"
+            echo "- Live: https://opservor-mvp.vercel.app"
+          } >> "$GITHUB_STEP_SUMMARY"

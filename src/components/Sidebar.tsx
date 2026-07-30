@@ -10,6 +10,9 @@ import { signOut } from "@/app/login/actions";
 // that routes to the shared "Coming soon" placeholder.
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", live: true },
+  // Sits second, directly under the dashboard. Guardian is meant to be the
+  // thing you look at, not a report you go hunting for.
+  { href: "/guardian", label: "Guardian", live: true },
   { href: "/dashboard/entry", label: "Data Entry", live: true },
   { href: "/fleet", label: "Fleet", live: true },
   { href: "/warehouse", label: "Warehouse", live: true },

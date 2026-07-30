@@ -570,3 +570,37 @@ export interface SafetyTotals {
   medium_count: number;
   low_count: number;
 }
+
+/* ------------------------------------------------------------------ *
+ * Guardian — migration 0015.
+ *
+ * A finding is not an alert. An alert says a threshold was crossed, which
+ * the stock screen already does. A finding says what is going to happen and
+ * carries the numbers it used to get there.
+ * ------------------------------------------------------------------ */
+
+export type FindingSeverity = "critical" | "high" | "medium" | "low";
+export type FindingStatus = "open" | "acknowledged" | "resolved" | "expired";
+
+export interface GuardianFinding {
+  id: string;
+  company_id: string;
+  /** Which check produced it — 'stockout_risk', and more to come. */
+  check_id: string;
+  severity: FindingSeverity;
+  title: string;
+  detail: string;
+  /** Every part of the business it drew on. Cross-module findings are the point. */
+  modules: string[];
+  entity_type: string | null;
+  entity_id: string | null;
+  entity_label: string | null;
+  /** The working. Shown to the reader, never hidden. */
+  evidence: Record<string, string | number | null>;
+  recommendation: string | null;
+  status: FindingStatus;
+  first_seen_at: string;
+  last_seen_at: string;
+  created_at: string;
+  updated_at: string;
+}

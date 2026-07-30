@@ -44,8 +44,11 @@ begin
     raise notice 'No non-demo company existed, so one was created.';
   end if;
 
+  -- 'owner' since 0014. Before that the only permitted value was 'founder',
+  -- and after it 'founder' fails the check constraint — so this script would
+  -- have started failing the moment roles were introduced.
   insert into app_user (auth_id, company_id, name, email, role)
-  values (v_auth, v_company, 'Ahsan Ahmad', v_email, 'founder');
+  values (v_auth, v_company, 'Ahsan Ahmad', v_email, 'owner');
 
   raise notice 'User record restored, pointed at company %.', v_company;
 end $$;

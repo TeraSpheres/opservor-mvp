@@ -585,7 +585,7 @@ export type FindingStatus = "open" | "acknowledged" | "resolved" | "expired";
 export interface GuardianFinding {
   id: string;
   company_id: string;
-  /** Which check produced it — 'stockout_risk', and more to come. */
+  /** Which check produced it — 'stockout_risk', 'capacity_clash', more to come. */
   check_id: string;
   severity: FindingSeverity;
   title: string;

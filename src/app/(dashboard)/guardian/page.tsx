@@ -36,41 +36,67 @@ const SEVERITY_EDGE: Record<FindingSeverity, string> = {
   low: "border-l-slate-500",
 };
 
-/** Field names as they should read on screen. */
-const LABELS: Record<string, string> = {
-  units_shipped: "Units shipped",
-  days_observed: "Days observed",
-  daily_rate: "Leaving per day",
-  quantity_on_hand: "On hand",
-  quantity_reserved: "Reserved",
-  available: "Available",
-  reorder_level: "Reorder level",
-  days_to_zero: "Days to zero",
-  days_to_reorder: "Days to reorder level",
-  assumed_lead_days: "Assumed lead time (days)",
+/* Field names as they should read on screen, in the order they should be read.
+ *
+ * An array rather than an object because jsonb does not preserve key order —
+ * Postgres stores keys shortest-first — so listing them here is the only way
+ * the numbers appear in the order somebody would work through them. */
+const LABELS: [string, string][] = [
+  // stockout_risk
+  ["units_shipped", "Units shipped"],
+  ["days_observed", "Days observed"],
+  ["daily_rate", "Leaving per day"],
+  ["quantity_on_hand", "On hand"],
+  ["quantity_reserved", "Reserved"],
+  ["available", "Available"],
+  ["reorder_level", "Reorder level"],
+  ["days_to_zero", "Days to zero"],
+  ["days_to_reorder", "Days to reorder level"],
+  ["assumed_lead_days", "Assumed lead time (days)"],
+  // capacity_clash
+  ["vehicles_serving", "Vehicles serving this site"],
+  ["worst_day", "Worst day"],
+  ["worst_day_vehicles", "Gone that day"],
+  ["share_gone_pct", "Share gone that day (%)"],
+  ["days_until", "Days away"],
+  ["vehicles_booked_out", "Booked out over the period"],
+  ["share_horizon_pct", "Share over the period (%)"],
+  ["horizon_days", "Days looked ahead"],
+  ["dock_utilization_now", "Dock use, this week (%)"],
+  ["dock_utilization_before", "Dock use, before (%)"],
+  ["orders_pending_now", "Orders waiting, this week"],
+  ["orders_pending_before", "Orders waiting, before"],
+  ["orders_per_day", "Orders a day"],
+];
+
+/* Anything a check had to assume rather than measure ends in _source, and is
+ * spelled out under the numbers. Presenting an assumption as a measurement is
+ * the one thing this product exists not to do. */
+const NOTE_PREFIX: Record<string, string> = {
+  lead_time_source: "Lead time is",
+  link_source: "Which vehicles serve this site is",
 };
 
 function Evidence({ evidence }: { evidence: GuardianFinding["evidence"] }) {
-  const source = evidence.lead_time_source as string | undefined;
-  const rows = Object.entries(evidence).filter(([k]) => k in LABELS);
+  const rows = LABELS.filter(([k]) => evidence[k] != null);
+  const notes = Object.entries(evidence).filter(([k]) => k.endsWith("_source"));
 
   return (
     <div className="mt-3 rounded-lg border border-border bg-surface p-3">
       <p className="mb-2 text-[11px] uppercase tracking-wider text-muted">How this was worked out</p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 md:grid-cols-4">
-        {rows.map(([k, v]) => (
+        {rows.map(([k, label]) => (
           <div key={k}>
-            <p className="text-[11px] text-muted">{LABELS[k]}</p>
-            <p className="text-sm text-ink">{String(v)}</p>
+            <p className="text-[11px] text-muted">{label}</p>
+            <p className="text-sm text-ink">{String(evidence[k])}</p>
           </div>
         ))}
       </div>
-      {source && (
-        // Said plainly. Lead time is an assumption until per-supplier times
-        // are recorded, and presenting an assumption as a measurement is the
-        // thing this product exists not to do.
-        <p className="mt-2 text-[11px] text-amber-400">Lead time is {source}.</p>
-      )}
+      {notes.map(([k, v]) => (
+        <p key={k} className="mt-2 text-[11px] text-amber-400">
+          {NOTE_PREFIX[k] ?? "Note:"} {String(v)}.
+        </p>
+      ))}
     </div>
   );
 }
@@ -166,10 +192,13 @@ export default function GuardianPage() {
     } else {
       setUnavailable(false);
       const rows = (data ?? []) as GuardianFinding[];
+      // Within a severity, soonest first. Each check names its own countdown —
+      // days_to_zero for stock, days_until for a clash — so both are read.
+      const soonest = (f: GuardianFinding) =>
+        Number(f.evidence.days_to_zero ?? f.evidence.days_until ?? 9999);
       rows.sort(
         (a, b) =>
-          SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
-          Number(a.evidence.days_to_zero ?? 9999) - Number(b.evidence.days_to_zero ?? 9999)
+          SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || soonest(a) - soonest(b)
       );
       setFindings(rows);
       setLastRun(rows[0]?.last_seen_at ?? null);

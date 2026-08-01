@@ -44,11 +44,30 @@ end $$;
 -- 1. Roles
 -- ---------------------------------------------------------------------------
 
--- Migrate before constraining. Applying the new check first would reject every
--- existing row and lock the only account out of the product.
+-- Order matters, and getting it wrong fails loudly.
+--
+-- 0001 created the column as `check (role = 'founder')`. Setting a row to
+-- 'owner' while that rule is still attached is rejected by the OLD rule — the
+-- new one is not the problem. So: drop, then migrate, then constrain.
+alter table app_user drop constraint if exists app_user_role_check;
+
 update app_user set role = 'owner' where role = 'founder';
 
-alter table app_user drop constraint if exists app_user_role_check;
+-- Anything unexpected is named before the constraint goes on, because
+-- "violated by some row" does not tell you which row or what was in it.
+do $$
+declare
+  v_bad text;
+begin
+  select string_agg(distinct role, ', ') into v_bad
+  from app_user
+  where role not in ('owner', 'manager', 'staff', 'viewer');
+
+  if v_bad is not null then
+    raise exception 'app_user holds role(s) the new rule does not allow: %. Map them first.', v_bad;
+  end if;
+end $$;
+
 alter table app_user
   add constraint app_user_role_check
   check (role in ('owner', 'manager', 'staff', 'viewer'));

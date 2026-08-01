@@ -160,7 +160,7 @@
   /* ------------------------------------------------------------ components */
 
   .split { display: grid; gap: clamp(1.5rem, 4vw, 3.5rem); grid-template-columns: 1fr; align-items: start; }
-  @media (min-width: 56rem) { .split { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 56rem) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 
   .readout {
     background: var(--panel); border: 1px solid var(--edge); border-radius: .8rem;
@@ -173,14 +173,22 @@
   .readout dd.ok { color: var(--good); }
 
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .85rem; counter-reset: s; }
+  /* Two columns, three children: the marker, the heading and the description.
+     Heading and description are both pinned to column two so they stack under
+     each other — left to flow, the third child lands in an implicit column
+     with no width and every word wraps onto its own line.
+     minmax(0, 1fr) stops long words widening the track past the viewport. */
   .steps li {
-    display: grid; grid-template-columns: 2.1rem 1fr; gap: .95rem; align-items: baseline;
+    display: grid; grid-template-columns: 2.1rem minmax(0, 1fr);
+    gap: .2rem .95rem; align-items: baseline;
   }
+  .steps b, .steps span { grid-column: 2; min-width: 0; }
   .steps li::before {
     counter-increment: s; content: counter(s);
     font-family: var(--data); font-size: .8rem; color: var(--ground);
     background: var(--cyan); width: 1.7rem; height: 1.7rem; border-radius: 50%;
     display: grid; place-items: center; font-weight: 700;
+    grid-row: span 2; align-self: start;
   }
   .steps li:last-child::before { background: var(--beacon); }
   .steps b { display: block; font-size: 1rem; color: var(--ink); margin-bottom: .12rem; }
@@ -189,13 +197,13 @@
 
   /* bar chart, drawn rather than embedded */
   .chart { display: grid; gap: .8rem; margin: 1.8rem 0 0; max-width: 46rem; }
-  .bar { display: grid; grid-template-columns: 9.5rem 1fr auto; gap: .9rem; align-items: center; }
+  .bar { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) auto; gap: .9rem; align-items: center; }
   .bar .lab { font-family: var(--data); font-size: .78rem; color: var(--muted); text-align: right; }
   .bar .track { background: rgba(255,255,255,.05); border-radius: .25rem; height: 1.5rem; overflow: hidden; }
   .bar .fill { height: 100%; width: 0; border-radius: .25rem; transition: width 1.1s cubic-bezier(.22,1,.36,1); }
   .is-live .bar .fill { width: var(--w); }
   .bar .val { font-family: var(--data); font-variant-numeric: tabular-nums; font-size: .9rem; color: var(--ink); min-width: 2.5rem; }
-  @media (max-width: 40rem) { .bar { grid-template-columns: 6.5rem 1fr auto; } .bar .lab { font-size: .68rem; } }
+  @media (max-width: 40rem) { .bar { grid-template-columns: 6.5rem minmax(0, 1fr) auto; } .bar .lab { font-size: .68rem; } }
 
   .grid3 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-top: 1.6rem; }
   .cell { background: var(--panel); border: 1px solid var(--edge); border-radius: .7rem; padding: 1.1rem 1.2rem; }
@@ -207,8 +215,10 @@
   .stat .t { font-size: .88rem; color: var(--muted); margin-top: .45rem; line-height: 1.45; }
 
   .nots { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: 1rem; }
-  .nots li { display: grid; grid-template-columns: .5rem 1fr; gap: .9rem; align-items: start; }
-  .nots li::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--beacon); margin-top: .5rem; }
+  /* Same three-children-two-columns trap as .steps. */
+  .nots li { display: grid; grid-template-columns: .5rem minmax(0, 1fr); gap: .2rem .9rem; align-items: start; }
+  .nots li::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--beacon); margin-top: .5rem; grid-row: span 2; }
+  .nots b, .nots span { grid-column: 2; min-width: 0; }
   .nots b { display: block; color: var(--ink); font-size: 1rem; margin-bottom: .2rem; }
   .nots span { font-size: .92rem; line-height: 1.55; color: var(--muted); }
 

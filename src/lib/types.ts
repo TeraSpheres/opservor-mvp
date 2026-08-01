@@ -579,6 +579,11 @@ export interface SafetyTotals {
  * carries the numbers it used to get there.
  * ------------------------------------------------------------------ */
 
+/** A row inside a finding's line-item list — one SKU within a supplier's order,
+ *  one product within a stock discrepancy. */
+export type EvidenceRow = Record<string, string | number | null>;
+export type EvidenceValue = string | number | null | EvidenceRow[];
+
 export type FindingSeverity = "critical" | "high" | "medium" | "low";
 export type FindingStatus = "open" | "acknowledged" | "resolved" | "expired";
 
@@ -596,7 +601,7 @@ export interface GuardianFinding {
   entity_id: string | null;
   entity_label: string | null;
   /** The working. Shown to the reader, never hidden. */
-  evidence: Record<string, string | number | null>;
+  evidence: Record<string, EvidenceValue>;
   recommendation: string | null;
   status: FindingStatus;
   first_seen_at: string;

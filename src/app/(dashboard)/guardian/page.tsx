@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { GuardianFinding, FindingSeverity } from "@/lib/types";
+import type { GuardianFinding, FindingSeverity, EvidenceRow } from "@/lib/types";
 
 const SEVERITY_ORDER: Record<FindingSeverity, number> = {
   critical: 0,
@@ -53,6 +53,18 @@ const LABELS: [string, string][] = [
   ["days_to_zero", "Days to zero"],
   ["days_to_reorder", "Days to reorder level"],
   ["assumed_lead_days", "Assumed lead time (days)"],
+  // stockout_risk, grouped by supplier
+  ["supplier", "Supplier"],
+  ["items_short", "Items short"],
+  ["items_already_late", "Already past ordering time"],
+  ["soonest_days", "Soonest runs out (days)"],
+  ["worst_item", "Most urgent item"],
+  ["units_to_order", "Units to order"],
+  // impossible_stock
+  ["items_affected", "Items affected"],
+  ["items_moving", "Items trading"],
+  ["worst_on_hand", "Worst figure"],
+  ["net_units", "Net units unaccounted for"],
   // capacity_clash
   ["vehicles_serving", "Vehicles serving this site"],
   ["worst_day", "Worst day"],
@@ -77,9 +89,66 @@ const NOTE_PREFIX: Record<string, string> = {
   link_source: "Which vehicles serve this site is",
 };
 
+/** Column headings for the line-item lists inside a grouped finding. */
+const COLS: Record<string, string> = {
+  sku: "Item",
+  name: "Description",
+  days_to_zero: "Days left",
+  available: "Available",
+  daily_rate: "Per day",
+  order: "Order",
+  on_hand: "On hand",
+  received: "Received",
+  shipped: "Shipped",
+};
+
+/* One finding can now cover many items — a supplier's whole order, or every
+ * product whose stock figure is impossible. The count is in the numbers above;
+ * this is the list somebody actually works from. */
+function ItemTable({ rows, total }: { rows: EvidenceRow[]; total?: number }) {
+  const keys = Object.keys(rows[0]).filter((k) => k in COLS);
+  const hidden = total != null ? total - rows.length : 0;
+
+  return (
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-border">
+            {keys.map((k) => (
+              <th key={k} className="py-1.5 pr-4 text-[11px] font-medium uppercase tracking-wider text-muted">
+                {COLS[k]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-b border-border/40 last:border-0">
+              {keys.map((k) => (
+                <td key={k} className="py-1.5 pr-4 text-ink">
+                  {r[k] == null ? "—" : String(r[k])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {hidden > 0 && (
+        <p className="mt-2 text-[11px] text-muted">
+          and {hidden} more on the same order
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Evidence({ evidence }: { evidence: GuardianFinding["evidence"] }) {
-  const rows = LABELS.filter(([k]) => evidence[k] != null);
-  const notes = Object.entries(evidence).filter(([k]) => k.endsWith("_source"));
+  const rows = LABELS.filter(([k]) => evidence[k] != null && !Array.isArray(evidence[k]));
+  const notes = Object.entries(evidence).filter(
+    ([k, v]) => k.endsWith("_source") && typeof v === "string"
+  );
+  const items = (evidence.items ?? evidence.sample) as EvidenceRow[] | undefined;
+  const total = Number(evidence.items_short ?? evidence.items_affected ?? 0) || undefined;
 
   return (
     <div className="mt-3 rounded-lg border border-border bg-surface p-3">
@@ -92,6 +161,11 @@ function Evidence({ evidence }: { evidence: GuardianFinding["evidence"] }) {
           </div>
         ))}
       </div>
+
+      {Array.isArray(items) && items.length > 0 && (
+        <ItemTable rows={items} total={total} />
+      )}
+
       {notes.map(([k, v]) => (
         <p key={k} className="mt-2 text-[11px] text-amber-400">
           {NOTE_PREFIX[k] ?? "Note:"} {String(v)}.
@@ -195,7 +269,7 @@ export default function GuardianPage() {
       // Within a severity, soonest first. Each check names its own countdown —
       // days_to_zero for stock, days_until for a clash — so both are read.
       const soonest = (f: GuardianFinding) =>
-        Number(f.evidence.days_to_zero ?? f.evidence.days_until ?? 9999);
+        Number(f.evidence.soonest_days ?? f.evidence.days_until ?? 9999);
       rows.sort(
         (a, b) =>
           SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || soonest(a) - soonest(b)

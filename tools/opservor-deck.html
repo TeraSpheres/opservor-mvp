@@ -1,0 +1,629 @@
+<title>Opservor — What your systems cannot tell you</title>
+
+<style>
+  /* Committed to one visual world on purpose: this is an instrument panel,
+     and it should read the same in a bright meeting room and on a phone at
+     night. No theme switch — the ground is the design. */
+  :root {
+    --ground: #080E18;
+    --panel: #121C2B;
+    --panel-2: #18253A;
+    --edge: #22334C;
+    --ink: #E6EEF8;
+    --muted: #7F93AC;          /* grey pulled toward the accent, not neutral */
+    --cyan: #35D6EE;
+    --blue: #3B9BF6;
+    --beacon: #FFA940;         /* the amber of a warning light on a loading bay */
+    --alarm: #F8686B;
+    --good: #3FD9A0;
+
+    --display: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --body: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+    --data: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+
+    --pad: clamp(1.25rem, 5vw, 5rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------------------------------------------------------- scaffolding */
+
+  #deck {
+    height: 100dvh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+
+  section {
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(4rem, 9vh, 6rem) var(--pad) clamp(4.5rem, 10vh, 6rem);
+    position: relative;
+  }
+
+  .wrap { width: min(72rem, 100%); margin-inline: auto; }
+
+  /* One soft disc per dark section, echoing the orbit mark. */
+  section::before {
+    content: "";
+    position: absolute;
+    right: -8vw; top: 12%;
+    width: min(46vw, 34rem); aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(53,214,238,.09), transparent 62%);
+    pointer-events: none;
+  }
+
+  /* ------------------------------------------------------------- typography */
+
+  .eyebrow {
+    font-family: var(--data);
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin: 0 0 1.1rem;
+  }
+
+  h1, h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 1.1rem;
+  }
+  h1 { font-size: clamp(2.4rem, 6.2vw, 4.4rem); }
+  h2 { font-size: clamp(1.75rem, 4vw, 2.9rem); }
+
+  .lede {
+    font-size: clamp(1rem, 1.55vw, 1.2rem);
+    line-height: 1.6;
+    color: #B9C8DA;
+    max-width: 58ch;
+    margin: 0 0 1.6rem;
+  }
+  .note { font-size: .95rem; line-height: 1.6; color: var(--muted); max-width: 62ch; margin: 1.4rem 0 0; }
+
+  .quote {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(1.5rem, 3.4vw, 2.5rem);
+    line-height: 1.28;
+    color: var(--cyan);
+    max-width: 22ch;
+    margin: .5rem 0 2rem;
+  }
+
+  /* ------------------------------------------------------------ the mark */
+
+  .brand { display: flex; align-items: center; gap: .85rem; margin-bottom: 2.4rem; }
+  .brand svg { width: 3rem; height: 3rem; flex: none; }
+  .brand b {
+    font-family: var(--data); font-size: .82rem; font-weight: 600;
+    letter-spacing: .32em; text-transform: uppercase; color: var(--ink);
+  }
+
+  /* -------------------------------------------------- the finding, the motif */
+
+  .finding {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: .9rem;
+    padding: clamp(1.1rem, 2.4vw, 1.7rem);
+    max-width: 54rem;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .9rem; }
+  .chip {
+    font-family: var(--data); font-size: .68rem; letter-spacing: .1em;
+    text-transform: uppercase; padding: .28rem .6rem; border-radius: .35rem;
+    border: 1px solid var(--edge); color: var(--muted);
+  }
+  .chip.sev { border: 0; color: #17202C; font-weight: 700; background: var(--alarm); }
+  .finding h3 {
+    font-family: var(--display); font-size: clamp(1.15rem, 2.3vw, 1.6rem);
+    line-height: 1.22; margin: 0 0 .6rem; color: #fff;
+  }
+  .finding p { margin: 0; font-size: clamp(.92rem, 1.35vw, 1.02rem); line-height: 1.62; color: #AEBFD3; }
+  .rec {
+    margin-top: 1rem; padding: .8rem 1rem; border-radius: .55rem;
+    background: rgba(53,214,238,.09);
+    font-size: clamp(.9rem, 1.3vw, 1rem); line-height: 1.5; color: #DCEAF6;
+  }
+  .rec b { color: var(--cyan); }
+
+  table.lines { width: 100%; border-collapse: collapse; margin-top: 1.1rem; font-family: var(--data); font-variant-numeric: tabular-nums; }
+  table.lines th {
+    text-align: left; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500; padding: 0 .6rem .5rem 0;
+    border-bottom: 1px solid var(--edge);
+  }
+  table.lines td { padding: .55rem .6rem .55rem 0; font-size: .92rem; color: #CFDCEA; }
+  table.lines td:last-child { color: var(--beacon); }
+  .scroller { overflow-x: auto; }
+
+  /* ------------------------------------------------------------ components */
+
+  .split { display: grid; gap: clamp(1.5rem, 4vw, 3.5rem); grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 56rem) { .split { grid-template-columns: 1fr 1fr; } }
+
+  .readout {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: .8rem;
+    padding: 1.4rem 1.6rem; font-family: var(--data); font-variant-numeric: tabular-nums;
+  }
+  .readout .sku { font-size: 1.25rem; color: #fff; letter-spacing: .04em; margin-bottom: 1rem; }
+  .readout dl { display: grid; grid-template-columns: auto 1fr; gap: .55rem 1.2rem; margin: 0; }
+  .readout dt { color: var(--muted); font-size: .85rem; }
+  .readout dd { margin: 0; text-align: right; font-size: .95rem; color: var(--ink); }
+  .readout dd.ok { color: var(--good); }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .85rem; counter-reset: s; }
+  .steps li {
+    display: grid; grid-template-columns: 2.1rem 1fr; gap: .95rem; align-items: baseline;
+  }
+  .steps li::before {
+    counter-increment: s; content: counter(s);
+    font-family: var(--data); font-size: .8rem; color: var(--ground);
+    background: var(--cyan); width: 1.7rem; height: 1.7rem; border-radius: 50%;
+    display: grid; place-items: center; font-weight: 700;
+  }
+  .steps li:last-child::before { background: var(--beacon); }
+  .steps b { display: block; font-size: 1rem; color: var(--ink); margin-bottom: .12rem; }
+  .steps span { font-size: .93rem; line-height: 1.55; color: var(--muted); }
+  .steps span code { font-family: var(--data); color: var(--cyan); font-size: .95em; }
+
+  /* bar chart, drawn rather than embedded */
+  .chart { display: grid; gap: .8rem; margin: 1.8rem 0 0; max-width: 46rem; }
+  .bar { display: grid; grid-template-columns: 9.5rem 1fr auto; gap: .9rem; align-items: center; }
+  .bar .lab { font-family: var(--data); font-size: .78rem; color: var(--muted); text-align: right; }
+  .bar .track { background: rgba(255,255,255,.05); border-radius: .25rem; height: 1.5rem; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; border-radius: .25rem; transition: width 1.1s cubic-bezier(.22,1,.36,1); }
+  .is-live .bar .fill { width: var(--w); }
+  .bar .val { font-family: var(--data); font-variant-numeric: tabular-nums; font-size: .9rem; color: var(--ink); min-width: 2.5rem; }
+  @media (max-width: 40rem) { .bar { grid-template-columns: 6.5rem 1fr auto; } .bar .lab { font-size: .68rem; } }
+
+  .grid3 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-top: 1.6rem; }
+  .cell { background: var(--panel); border: 1px solid var(--edge); border-radius: .7rem; padding: 1.1rem 1.2rem; }
+  .cell b { display: block; font-family: var(--display); font-size: 1.1rem; color: var(--ink); margin-bottom: .3rem; }
+  .cell span { font-size: .9rem; line-height: 1.55; color: var(--muted); }
+
+  .stats { display: grid; gap: 1.4rem 2.4rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin: 1.8rem 0 0; }
+  .stat .n { font-family: var(--data); font-variant-numeric: tabular-nums; font-size: clamp(2.1rem, 4.5vw, 3rem); color: var(--cyan); line-height: 1; }
+  .stat .t { font-size: .88rem; color: var(--muted); margin-top: .45rem; line-height: 1.45; }
+
+  .nots { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: 1rem; }
+  .nots li { display: grid; grid-template-columns: .5rem 1fr; gap: .9rem; align-items: start; }
+  .nots li::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--beacon); margin-top: .5rem; }
+  .nots b { display: block; color: var(--ink); font-size: 1rem; margin-bottom: .2rem; }
+  .nots span { font-size: .92rem; line-height: 1.55; color: var(--muted); }
+
+  .warnbox {
+    margin-top: 1.6rem; padding: 1.1rem 1.3rem; border-radius: .7rem;
+    background: rgba(255,169,64,.09); border: 1px solid rgba(255,169,64,.28);
+  }
+  .warnbox b { color: var(--beacon); display: block; margin-bottom: .35rem; font-size: 1.02rem; }
+  .warnbox span { font-size: .95rem; line-height: 1.6; color: #E2D4BE; }
+
+  /* --------------------------------------------------------------- chrome */
+
+  #bar {
+    position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 30;
+    background: rgba(255,255,255,.07);
+  }
+  #bar i { display: block; height: 100%; width: 0; background: var(--cyan); transition: width .25s linear; }
+
+  #hud {
+    position: fixed; z-index: 30; right: var(--pad); bottom: 1.15rem;
+    display: flex; align-items: center; gap: .8rem;
+  }
+  #hud button {
+    font-family: var(--data); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); background: rgba(18,28,43,.92); border: 1px solid var(--edge);
+    border-radius: 2rem; padding: .5rem .95rem; cursor: pointer;
+    backdrop-filter: blur(6px);
+  }
+  #hud button:hover, #hud button:focus-visible { color: var(--ink); border-color: var(--cyan); }
+  #count { font-family: var(--data); font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  #dots {
+    position: fixed; z-index: 30; left: var(--pad); bottom: 1.35rem;
+    display: flex; gap: .42rem;
+  }
+  #dots button {
+    width: .48rem; height: .48rem; padding: 0; border-radius: 50%; cursor: pointer;
+    border: 0; background: rgba(255,255,255,.2);
+  }
+  #dots button[aria-current="true"] { background: var(--cyan); transform: scale(1.35); }
+  #dots button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  @media (max-width: 40rem) { #dots { display: none; } }
+
+  :where(a, button):focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  /* entrance */
+  .r { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.22,1,.36,1); }
+  .is-live .r { opacity: 1; transform: none; }
+  .is-live .r:nth-child(2) { transition-delay: .08s; }
+  .is-live .r:nth-child(3) { transition-delay: .16s; }
+  .is-live .r:nth-child(4) { transition-delay: .24s; }
+  .is-live .r:nth-child(5) { transition-delay: .32s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #deck { scroll-behavior: auto; }
+    .r { opacity: 1; transform: none; transition: none; }
+    .bar .fill { transition: none; width: var(--w); }
+  }
+
+  .foot { margin-top: 2.6rem; font-family: var(--data); font-size: .72rem; letter-spacing: .1em; color: #56687F; text-transform: uppercase; }
+</style>
+
+<div id="bar"><i></i></div>
+
+<main id="deck">
+
+  <!-- 1 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <div class="brand r">
+        <svg viewBox="0 0 64 64" fill="none" role="img" aria-label="Opservor">
+          <defs>
+            <linearGradient id="om" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#7CC4FF"/>
+              <stop offset="0.5" stop-color="#3B82F6"/>
+              <stop offset="1" stop-color="#22D3EE"/>
+            </linearGradient>
+          </defs>
+          <g stroke="url(#om)" stroke-width="4" fill="none" opacity="0.32">
+            <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(-18 32 32)"/>
+            <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(40 32 32)"/>
+          </g>
+          <circle cx="32" cy="32" r="15" fill="url(#om)" opacity="0.14"/>
+          <circle cx="32" cy="32" r="15" stroke="url(#om)" stroke-width="2.6" fill="none"/>
+          <g stroke="url(#om)" stroke-width="4.6" fill="none" stroke-linecap="round">
+            <path d="M52.68 49.36 A27 9 40 0 1 11.32 14.64"/>
+            <path d="M57.68 23.66 A27 9 -18 0 1 6.32 40.34"/>
+          </g>
+        </svg>
+        <b>Opservor</b>
+      </div>
+      <h1 class="r">What your systems<br>cannot tell you</h1>
+      <p class="lede r">Operational intelligence for logistics, warehousing and fleet.</p>
+      <p class="foot r">TeraSpheres · Edmonton, Alberta</p>
+    </div>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">The gap</p>
+      <h2 class="r">A question your systems cannot answer</h2>
+      <p class="quote r">“Which of my depots is going to struggle next Thursday, and why?”</p>
+      <p class="lede r">
+        Your warehouse system knows the docks are filling up. Your fleet system knows two vehicles
+        are booked in for service. Your stock system knows an item is running down.
+      </p>
+      <p class="lede r">
+        All three are correct. None of them talk to each other — so the answer only arrives on
+        Thursday, when somebody spends the afternoon firefighting and calls it bad luck.
+      </p>
+    </div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">The problem</p>
+      <h2 class="r">What your stock screen shows you today</h2>
+      <div class="split r">
+        <div class="readout">
+          <div class="sku">BAK-00484</div>
+          <dl>
+            <dt>On hand</dt><dd>28 units</dd>
+            <dt>Reorder level</dt><dd>26 units</dd>
+            <dt>Status</dt><dd class="ok">In stock</dd>
+          </dl>
+        </div>
+        <div>
+          <h2 style="font-size:clamp(1.3rem,2.6vw,1.9rem)">28 is above 26.<br>So it says you are fine.</h2>
+          <p class="note" style="margin-top:.8rem">
+            That is the whole of the logic — one number compared with another. It does not know how
+            fast the item is leaving. It does not know how long your supplier takes. It has never
+            once divided one by the other.
+          </p>
+        </div>
+      </div>
+      <div class="warnbox r">
+        <b>It is not fine.</b>
+        <span>
+          Seven units a day are leaving. 28 ÷ 7 = four days of stock. Your supplier takes ten.
+          Ordering this morning still leaves six days with an empty shelf — and the screen above
+          will show green on every one of them.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">The same item, the same minute</p>
+      <h2 class="r">What Guardian says instead</h2>
+      <div class="finding r">
+        <div class="chips">
+          <span class="chip sev">critical</span>
+          <span class="chip">inventory</span>
+        </div>
+        <h3>Supplier 9 — BAK-00484, 4 days of cover</h3>
+        <p>
+          Bakery item 484 has 4 days of cover. A replacement order takes about 10 days, so ordering
+          today still leaves 6 days with nothing on the shelf.
+        </p>
+        <div class="rec"><b>Recommended:</b> Raise an order to Supplier 9 for 184 units of BAK-00484.</div>
+        <div class="scroller">
+          <table class="lines">
+            <thead><tr><th>Item</th><th>Order</th><th>Available</th><th>Per day</th><th>Days left</th></tr></thead>
+            <tbody><tr><td>BAK-00484</td><td>184</td><td>28</td><td>7</td><td>4</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="note r">
+        Not an alert. An alert says a threshold was crossed — your stock screen already does that,
+        and it is why 28 against 26 looks healthy. This says what is going to happen, when, and
+        what to do about it.
+      </p>
+    </div>
+  </section>
+
+  <!-- 5 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">Trust</p>
+      <h2 class="r">Every finding shows its working</h2>
+      <p class="lede r">
+        An operations manager will not act on “trust me, Thursday will fall over” — and should not.
+        So the arithmetic is on the page, not behind a support ticket.
+      </p>
+      <ol class="steps r">
+        <li><b>Count what actually left</b><span>758 units shipped over the last 90 days. Not a forecast — that happened.</span></li>
+        <li><b>Turn it into a rate</b><span><code>758 ÷ 90 = 7</code> units a day.</span></li>
+        <li><b>Work out what is really yours</b><span>46 on hand, 18 already promised to orders, so 28 can actually be sold.</span></li>
+        <li><b>Divide</b><span><code>28 ÷ 7 = 4</code> days of cover.</span></li>
+        <li><b>Compare against the supplier</b><span>Four is less than ten. You are not approaching a problem — you are six days late.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">Scale</p>
+      <h2 class="r">Your catalogue, seen properly</h2>
+      <p class="lede r">
+        Across 300 trading items in a food and beverage operation, this is what days of cover
+        actually looks like. Almost all of it is fine — and that is the point.
+      </p>
+      <div class="chart r">
+        <div class="bar"><span class="lab">Impossible</span><span class="track"><i class="fill" style="--w:3.5%;background:var(--alarm)"></i></span><span class="val">6</span></div>
+        <div class="bar"><span class="lab">Under 10 days</span><span class="track"><i class="fill" style="--w:3.5%;background:var(--beacon)"></i></span><span class="val">6</span></div>
+        <div class="bar"><span class="lab">11 to 15 days</span><span class="track"><i class="fill" style="--w:3.5%;background:#E8B04B"></i></span><span class="val">6</span></div>
+        <div class="bar"><span class="lab">16 to 119 days</span><span class="track"><i class="fill" style="--w:100%;background:var(--blue)"></i></span><span class="val">169</span></div>
+        <div class="bar"><span class="lab">120 days plus</span><span class="track"><i class="fill" style="--w:67%;background:var(--good)"></i></span><span class="val">113</span></div>
+      </div>
+      <p class="note r">
+        Eighteen items out of three hundred need somebody’s attention this week — and they are not
+        the ones your reorder report would name. Software that flags three hundred items has told
+        you nothing. Software that flags eighteen has done a day’s work for you.
+      </p>
+    </div>
+  </section>
+
+  <!-- 7 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">The one nobody else can do</p>
+      <h2 class="r">Two systems that never speak</h2>
+      <div class="finding r">
+        <div class="chips">
+          <span class="chip sev">critical</span>
+          <span class="chip">warehouse</span>
+          <span class="chip">fleet</span>
+        </div>
+        <h3>Calgary Depot loses 2 of 6 vehicles on Thursday</h3>
+        <p>
+          6 vehicles have been running from Calgary Depot. 2 of them are booked in for service on
+          Thursday 06 Aug — 33% of the site’s vehicles gone on one day. Dock use has risen from
+          88% to 94% over the same period.
+        </p>
+        <div class="rec"><b>Recommended:</b> Move 1 of the Thursday bookings to a quieter day, or bring vehicles across from another site.</div>
+      </div>
+      <p class="note r">
+        Every fact in that sentence is ordinary. Your warehouse system knows the docks. Your fleet
+        system knows the bookings. <strong style="color:var(--ink)">Nothing joins them</strong> — so
+        nobody finds out until Thursday.
+      </p>
+    </div>
+  </section>
+
+  <!-- 8 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">Read this one carefully</p>
+      <h2 class="r">What it will not do</h2>
+      <p class="lede r">
+        Most software in this market is sold on what it might eventually do. This is what Opservor
+        does not do today, stated before you ask.
+      </p>
+      <ul class="nots r">
+        <li><b>It does not predict the future.</b><span>It divides what has happened by how fast it is happening. That is arithmetic, not prophecy.</span></li>
+        <li><b>It does not know your supplier lead times.</b><span>Nothing records them yet, so it assumes ten days — and says so on every finding that relies on it.</span></li>
+        <li><b>It does not replace your warehouse or fleet system.</b><span>It reads them. Keep what you have; this joins it up.</span></li>
+        <li><b>It has no customers yet.</b><span>You would be the first. That is a real risk and it is priced into the conversation.</span></li>
+      </ul>
+      <p class="note r" style="color:var(--cyan);font-family:var(--display);font-style:italic;font-size:1.15rem;max-width:52ch">
+        A supplier who tells you the limits before you sign is a supplier who will tell you when
+        something breaks.
+      </p>
+    </div>
+  </section>
+
+  <!-- 9 ------------------------------------------------------------------ -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">Built and running</p>
+      <h2 class="r">What is in the product today</h2>
+      <div class="stats r">
+        <div class="stat"><div class="n">8</div><div class="t">operational modules, all live</div></div>
+        <div class="stat"><div class="n">31</div><div class="t">database tables, each separated by company</div></div>
+        <div class="stat"><div class="n">3</div><div class="t">Guardian checks in production</div></div>
+        <div class="stat"><div class="n">4</div><div class="t">roles with per-module permissions</div></div>
+      </div>
+      <div class="grid3 r">
+        <div class="cell"><b>Separated at the database</b><span>Not filtered in the application. A bug in the code cannot reach another company’s data.</span></div>
+        <div class="cell"><b>Fleet, warehouse, stock, finance, workforce, safety</b><span>Each module live, with reports over any date range.</span></div>
+        <div class="cell"><b>Tested against known answers</b><span>The demo data carries a fixed number of planted faults, so a run either finds exactly those or the product is wrong.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 ----------------------------------------------------------------- -->
+  <section>
+    <div class="wrap">
+      <p class="eyebrow r">Next step</p>
+      <h2 class="r">What a trial looks like</h2>
+      <ol class="steps r">
+        <li><b>A read-only copy of three months of history</b><span>Stock movements, vehicle trips, maintenance bookings, shift records. Whatever you already export to a spreadsheet is enough.</span></li>
+        <li><b>One afternoon</b><span>Loading it and running the checks against your real operation, not a demo.</span></li>
+        <li><b>You tell us which findings are wrong</b><span>Every finding shows its working, so you can check it against what you already know. Wrong findings are more useful to us than right ones.</span></li>
+      </ol>
+      <p class="note r">No integration work, no change to how your team works, nothing switched off.</p>
+    </div>
+  </section>
+
+  <!-- 11 ----------------------------------------------------------------- -->
+  <section>
+    <div class="wrap">
+      <h2 class="r" style="color:var(--muted);font-size:clamp(1.6rem,3.6vw,2.6rem)">
+        Every system you own reports what happened.
+      </h2>
+      <h2 class="r" style="font-size:clamp(1.9rem,4.4vw,3.2rem)">
+        None of them tell you what is about to.
+      </h2>
+      <p class="foot r" style="margin-top:3rem">TeraSpheres · Opservor · Edmonton, Alberta</p>
+    </div>
+  </section>
+
+</main>
+
+<nav id="dots" aria-label="Slides"></nav>
+
+<div id="hud">
+  <span id="count">01 / 11</span>
+  <button id="toggle" type="button" aria-pressed="false">Pause</button>
+</div>
+
+<script>
+  (function () {
+    var deck = document.getElementById('deck');
+    var slides = Array.prototype.slice.call(deck.querySelectorAll('section'));
+    var fill = document.querySelector('#bar i');
+    var count = document.getElementById('count');
+    var toggle = document.getElementById('toggle');
+    var dotWrap = document.getElementById('dots');
+
+    var HOLD = 13000;               // how long each slide sits before advancing
+    var current = 0;
+    var running = true;
+    var started = 0;
+    var raf = null;
+
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (calm) { running = false; }
+
+    /* dots */
+    slides.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Slide ' + (i + 1));
+      b.addEventListener('click', function () { go(i); });
+      dotWrap.appendChild(b);
+    });
+    var dots = Array.prototype.slice.call(dotWrap.children);
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function mark(i) {
+      current = i;
+      dots.forEach(function (d, j) { d.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      count.textContent = pad(i + 1) + ' / ' + pad(slides.length);
+      started = performance.now();
+    }
+
+    function go(i) {
+      if (i < 0) { i = 0; }
+      if (i >= slides.length) { i = 0; }
+      slides[i].scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+    }
+
+    /* Which slide is on screen is the scroller's business, not the timer's —
+       so dragging, keys and the dots all stay in step with the progress bar. */
+    var seen = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && e.intersectionRatio > 0.55) {
+          e.target.classList.add('is-live');
+          mark(slides.indexOf(e.target));
+        }
+      });
+    }, { threshold: [0.55] });
+    slides.forEach(function (s) { seen.observe(s); });
+
+    function tick(now) {
+      if (running) {
+        var p = Math.min((now - started) / HOLD, 1);
+        fill.style.width = (p * 100) + '%';
+        if (p >= 1) { go(current + 1); }
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function setRunning(on) {
+      running = on;
+      started = performance.now();
+      if (!on) { fill.style.width = '0%'; }
+      toggle.textContent = on ? 'Pause' : 'Play';
+      toggle.setAttribute('aria-pressed', on ? 'false' : 'true');
+    }
+
+    toggle.addEventListener('click', function () { setRunning(!running); });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') {
+        e.preventDefault(); setRunning(false); go(current + 1);
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault(); setRunning(false); go(current - 1);
+      } else if (e.key === ' ') {
+        e.preventDefault(); setRunning(!running);
+      }
+    });
+
+    // Someone who starts scrolling has taken over; stop moving under them.
+    var touched = false;
+    deck.addEventListener('wheel', function () { if (!touched) { touched = true; setRunning(false); } }, { passive: true });
+    deck.addEventListener('touchstart', function () { if (!touched) { touched = true; setRunning(false); } }, { passive: true });
+
+    slides[0].classList.add('is-live');
+    setRunning(!calm);
+    raf = requestAnimationFrame(tick);
+  }());
+</script>

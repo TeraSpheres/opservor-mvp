@@ -44,12 +44,49 @@ const img = (f) => path.join(BRAND, f);
 function darkSlide(p) {
   const s = p.addSlide();
   s.background = { color: DEEP };
+  // A single soft disc, echoing the orbit mark. Kept fully on the canvas —
+  // pptxgenjs writes out-of-bounds coordinates rather than clamping them, and
+  // a shape that bleeds off the edge can simply fail to appear.
+  s.addShape('ellipse', {
+    x: 8.55, y: 2.55, w: 4.6, h: 4.6,
+    fill: { color: BLUE, transparency: 93 },
+  });
   return s;
+}
+
+/** Distribution of the demo catalogue by days of cover — a native chart, so
+ *  it stays a chart in PowerPoint rather than a picture of one. */
+function coverChart(s, x, y, w, h) {
+  s.addChart('bar', [{
+    name: 'Stock items',
+    labels: ['Impossible', 'Under 10 days', '11 to 15 days', '16 to 119 days', '120 days plus'],
+    values: [6, 6, 6, 169, 113],
+  }], {
+    x, y, w, h,
+    barDir: 'col',
+    barGapWidthPct: 55,
+    chartColors: [RED, AMBER, 'E8B04B', BLUE, GREEN],
+    showTitle: false,
+    showLegend: false,
+    showValue: true,
+    dataLabelPosition: 'outEnd',
+    dataLabelColor: INK,
+    dataLabelFontFace: B,
+    dataLabelFontSize: 12,
+    catAxisLabelColor: BODY,
+    catAxisLabelFontFace: B,
+    catAxisLabelFontSize: 11,
+    valAxisHidden: true,
+    valGridLine: { style: 'none' },
+    catGridLine: { style: 'none' },
+    catAxisLineShow: false,
+  });
 }
 
 function lightSlide(p, title, kicker) {
   const s = p.addSlide();
   s.background = { color: 'FFFFFF' };
+  s.slideNumber = { x: 12.5, y: 6.95, w: 0.5, h: 0.3, color: 'B4BECB', fontFace: B, fontSize: 10 };
   if (kicker) {
     s.addText(kicker.toUpperCase(), {
       x: M, y: 0.42, w: CW, h: 0.24, margin: 0,
@@ -334,7 +371,23 @@ function clientDeck() {
   }
   s.addNotes('The fifth line is the one that matters. Everything above it is arithmetic; that is the judgement.');
 
-  /* 6 — the cross-module one */
+  /* 6 — the catalogue seen properly */
+  s = lightSlide(p, 'Your catalogue, seen properly', 'Scale');
+  s.addText(
+    'Across 300 trading items in a food and beverage operation of your size, this is what days of cover ' +
+    'actually looks like. Almost all of it is fine — and that is the point.',
+    { x: M, y: 1.8, w: CW, h: 0.7, margin: 0, fontFace: B, fontSize: 15, color: BODY, lineSpacing: 21 }
+  );
+  coverChart(s, M, 2.55, CW, 3.1);
+  s.addText(
+    'Eighteen items out of three hundred need somebody\'s attention this week, and they are not the ones ' +
+    'your reorder report would name. Software that flags three hundred items has told you nothing; ' +
+    'software that flags eighteen has done a day\'s work for you.',
+    { x: M, y: 5.85, w: CW, h: 0.9, margin: 0, fontFace: B, fontSize: 14, color: BODY, lineSpacing: 20 }
+  );
+  s.addNotes('Figures from a real run against seeded data with a known number of planted problems.');
+
+  /* 7 — the cross-module one */
   s = darkSlide(p);
   s.addText('THE ONE NOBODY ELSE CAN DO', {
     x: M, y: 0.7, w: CW, h: 0.3, margin: 0,
@@ -692,7 +745,38 @@ function investorDeck() {
     }
   );
 
-  /* 6 — the moat */
+  /* 6 — signal, not noise */
+  s = lightSlide(p, 'Signal, not noise', 'The discipline');
+  s.addText(
+    'The same catalogue, the same arithmetic, before and after the findings were grouped by supplier and ' +
+    'broken records were separated from genuine shortages. Nothing was made less urgent — the wall of red ' +
+    'was mostly one data fault reported three hundred different ways.',
+    { x: M, y: 1.76, w: CW, h: 1.0, margin: 0, fontFace: B, fontSize: 15, color: BODY, lineSpacing: 21 }
+  );
+  s.addChart('bar', [
+    { name: 'Before', labels: ['Critical', 'High'], values: [72, 9] },
+    { name: 'After',  labels: ['Critical', 'High'], values: [6, 7] },
+  ], {
+    x: M, y: 2.7, w: 7.4, h: 3.0,
+    barDir: 'col', barGapWidthPct: 60,
+    chartColors: [RED, BLUE],
+    showTitle: false, showLegend: true, legendPos: 'b',
+    legendColor: BODY, legendFontFace: B, legendFontSize: 11,
+    showValue: true, dataLabelPosition: 'outEnd',
+    dataLabelColor: INK, dataLabelFontFace: B, dataLabelFontSize: 12,
+    catAxisLabelColor: BODY, catAxisLabelFontFace: B, catAxisLabelFontSize: 12,
+    valAxisHidden: true, valGridLine: { style: 'none' },
+    catGridLine: { style: 'none' }, catAxisLineShow: false,
+  });
+  s.addText(
+    'A screen showing seventy-two urgent items is a screen nobody opens twice. It earns exactly the treatment ' +
+    'operations teams already give the alerts they have.\n\n' +
+    'Getting from the first number to the second took no new technology. It took deciding that a finding must ' +
+    'match a job somebody actually does — one supplier, one order, one phone call.',
+    { x: M + 7.9, y: 2.8, w: CW - 7.9, h: 2.8, margin: 0, fontFace: B, fontSize: 14, color: BODY, lineSpacing: 21 }
+  );
+
+  /* 7 — the moat */
   s = darkSlide(p);
   s.addText('WHY THIS IS DEFENSIBLE', {
     x: M, y: 0.8, w: CW, h: 0.3, margin: 0,

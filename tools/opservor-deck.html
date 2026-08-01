@@ -39,18 +39,20 @@
   #deck {
     height: 100dvh;
     overflow-y: scroll;
-    scroll-snap-type: y mandatory;
+    /* Proximity, not mandatory. On a short screen a section holding more than
+       fits would have its overflow snapped away before it could be read.
+       Sections that fit still snap; ones that do not are simply scrollable. */
+    scroll-snap-type: y proximity;
     scroll-behavior: smooth;
   }
 
   section {
     min-height: 100dvh;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: clamp(4rem, 9vh, 6rem) var(--pad) clamp(4.5rem, 10vh, 6rem);
+    padding: clamp(3rem, 9vh, 6rem) var(--pad) clamp(4rem, 10vh, 6rem);
     position: relative;
   }
 
@@ -577,16 +579,35 @@
     }
 
     /* Which slide is on screen is the scroller's business, not the timer's —
-       so dragging, keys and the dots all stay in step with the progress bar. */
-    var seen = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting && e.intersectionRatio > 0.55) {
-          e.target.classList.add('is-live');
+       so dragging, keys and the dots all stay in step with the progress bar.
+
+       Triggering on a share of the section being visible does not work: a
+       section with more content than fits the screen can never reach that
+       share, so it never reveals and shows as a blank slide. Watching a thin
+       band across the middle of the viewport instead is independent of how
+       tall the section is. */
+    if ('IntersectionObserver' in window) {
+      var seen = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) { return; }
+          e.target.classList.add('is-live');       // revealed once, stays revealed
           mark(slides.indexOf(e.target));
+        });
+      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+      slides.forEach(function (s) { seen.observe(s); });
+    } else {
+      // No observer, no hiding. Text that cannot animate must still be read.
+      slides.forEach(function (s) { s.classList.add('is-live'); });
+    }
+
+    // Last resort: nothing on this page is worth losing to a failed reveal.
+    setTimeout(function () {
+      slides.forEach(function (s) {
+        if (!s.classList.contains('is-live') && s.getBoundingClientRect().top < window.innerHeight) {
+          s.classList.add('is-live');
         }
       });
-    }, { threshold: [0.55] });
-    slides.forEach(function (s) { seen.observe(s); });
+    }, 1200);
 
     function tick(now) {
       if (running) {

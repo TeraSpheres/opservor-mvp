@@ -14,6 +14,9 @@ const NAV_ITEMS = [
   // thing you look at, not a report you go hunting for.
   { href: "/guardian", label: "Guardian", live: true },
   { href: "/dashboard/entry", label: "Data Entry", live: true },
+  // Sits with Data Entry because it is the same job at a different scale —
+  // one row typed, or a year of them from whatever system they already run.
+  { href: "/import", label: "Import", live: true },
   { href: "/fleet", label: "Fleet", live: true },
   { href: "/warehouse", label: "Warehouse", live: true },
   { href: "/inventory", label: "Inventory", live: true },

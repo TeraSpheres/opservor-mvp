@@ -130,12 +130,21 @@ export default function ImportPage() {
           continue;
         }
 
+        /* A cell that cannot be read costs the whole row, required or not.
+         *
+         * The operator has said this column is On hand. A value of "n/a" in it
+         * does not mean nothing was in stock — it means the file does not know,
+         * and the two are not the same number. Importing the row without it
+         * lets the column default to zero, and a zero flows into the run-out
+         * forecast as fact. An empty cell is different and still imports: the
+         * file is saying there is nothing to record, not something it failed to
+         * express. */
         if (f.kind === "number" || f.kind === "integer") {
           const n = readNumber(cell, f.kind === "integer" ? "whole" : "any");
           if (n === null) {
             if (problems.length < MAX_PROBLEMS)
               problems.push({ line, field: f.label, value: cell, why: "not a number" });
-            if (f.required) usable = false;
+            usable = false;
             continue;
           }
           out[f.key] = f.kind === "integer" ? Math.round(n) : n;
@@ -144,7 +153,7 @@ export default function ImportPage() {
           if (!d) {
             if (problems.length < MAX_PROBLEMS)
               problems.push({ line, field: f.label, value: cell, why: "not a date" });
-            if (f.required) usable = false;
+            usable = false;
             continue;
           }
           out[f.key] = d;
@@ -153,7 +162,7 @@ export default function ImportPage() {
           if (!v) {
             if (problems.length < MAX_PROBLEMS)
               problems.push({ line, field: f.label, value: cell, why: "not recognised" });
-            if (f.required) usable = false;
+            usable = false;
             continue;
           }
           out[f.key] = v;

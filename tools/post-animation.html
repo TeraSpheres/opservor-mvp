@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Opservor — the screen that says green</title>
+<style>
+  :root {
+    --ground:#0B1220; --panel:#17212F; --edge:#243449;
+    --ink:#FFFFFF; --muted:#8496AC;
+    --green:#3FD9A0; --amber:#FFA940; --red:#F8686B;
+    --display: Georgia, "Times New Roman", serif;
+    --body: "Segoe UI", -apple-system, system-ui, sans-serif;
+    --data: Consolas, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #05070C;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    font-family: var(--body);
+    gap: 1rem; padding: 1rem;
+  }
+
+  /* Exactly 1080 square, so a region recording needs no cropping.
+     Scales down on a smaller screen without changing the composition. */
+  .stage {
+    width: 1080px; height: 1080px;
+    max-width: min(92vw, 92vh); max-height: min(92vw, 92vh);
+    aspect-ratio: 1;
+    background: var(--ground);
+    position: relative; overflow: hidden;
+    outline: 1px solid #1B2637;
+    container-type: size;
+  }
+
+  /* Everything sized against the stage, so it holds at any scale. */
+  .inner {
+    position: absolute; inset: 0;
+    padding: 9cqw;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+
+  .kicker {
+    font-family: var(--data); font-size: 1.55cqw; letter-spacing: .3em;
+    color: var(--muted); margin-bottom: 2.4cqw;
+  }
+  .kicker.warn { color: var(--amber); }
+
+  .row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 1.5cqw 0; border-bottom: 1px solid var(--edge);
+  }
+  .row:last-of-type { border-bottom: 0; }
+  .row .lab { font-size: 2.5cqw; color: var(--muted); }
+  .row .val {
+    font-family: var(--data); font-size: 3.4cqw; font-weight: 700; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .val.good { color: var(--green); }
+  .val.warn { color: var(--amber); }
+  .val.bad  { color: var(--red); }
+
+  .punch {
+    background: var(--panel); border-radius: 1.2cqw;
+    padding: 3.4cqw 3.6cqw; margin-top: 4cqw;
+  }
+  .punch h2 {
+    font-family: var(--display); font-size: 3.5cqw; font-weight: 700;
+    line-height: 1.25; color: var(--ink);
+  }
+  .punch h2.bad { color: var(--red); }
+  .punch p { font-size: 2.2cqw; color: var(--muted); margin-top: 1.6cqw; }
+
+  .ask {
+    font-size: 2.4cqw; font-style: italic; color: #9FB0C4;
+    margin-top: 4cqw; line-height: 1.5;
+  }
+
+  /* ---- the sequence ----
+     Everything starts hidden and is revealed on a timer. The hold after the
+     healthy screen is deliberate: the point only lands if the reader has had
+     a moment to believe it. */
+  .step { opacity: 0; transform: translateY(14px); }
+  .run .step { animation: rise .55s cubic-bezier(.22,1,.36,1) forwards; }
+
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .run .s1 { animation-delay: .3s; }
+  .run .s2 { animation-delay: .8s; }
+  .run .s3 { animation-delay: 1.3s; }
+  .run .s4 { animation-delay: 4.2s; }   /* the hold sits here */
+  .run .s5 { animation-delay: 4.7s; }
+  .run .s6 { animation-delay: 5.2s; }
+  .run .s7 { animation-delay: 7.4s; }
+  .run .s8 { animation-delay: 8.6s; }
+  .run .s9 { animation-delay: 10.4s; }
+
+  /* The status flips from healthy to the truth, late, after the arithmetic. */
+  .flip { position: relative; display: inline-block; }
+  .flip .was, .flip .now { display: block; }
+  .flip .now { position: absolute; inset: 0; opacity: 0; }
+  .run .flip .was { animation: fadeOut .4s ease 9.4s forwards; }
+  .run .flip .now { animation: fadeIn .4s ease 9.4s forwards; }
+  @keyframes fadeOut { to { opacity: 0; } }
+  @keyframes fadeIn  { to { opacity: 1; } }
+
+
+  .controls { display: flex; gap: .6rem; align-items: center; }
+  button {
+    font-family: var(--data); font-size: .72rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    background: #101927; border: 1px solid var(--edge);
+    border-radius: 2rem; padding: .55rem 1.1rem; cursor: pointer;
+  }
+  button:hover { color: var(--ink); border-color: var(--green); }
+  .note {
+    font-size: .74rem; color: #5D6E85; text-align: center;
+    max-width: 46rem; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage run" id="stage">
+  <div class="inner">
+
+    <div class="kicker step s1">WHAT YOUR STOCK SCREEN SAYS</div>
+
+    <div class="row step s2">
+      <span class="lab">On hand</span>
+      <span class="val">28</span>
+    </div>
+    <div class="row step s2">
+      <span class="lab">Reorder level</span>
+      <span class="val">26</span>
+    </div>
+    <div class="row step s3">
+      <span class="lab">Status</span>
+      <span class="val flip">
+        <span class="was good">IN STOCK</span>
+        <span class="now bad" style="text-align:right">TOO LATE</span>
+      </span>
+    </div>
+
+    <div class="kicker warn step s4" style="margin-top:5cqw">WHAT IT DOES NOT SAY</div>
+
+    <div class="row step s5">
+      <span class="lab">Leaving the shelf</span>
+      <span class="val warn">7 a day</span>
+    </div>
+    <div class="row step s6">
+      <span class="lab">Supplier takes</span>
+      <span class="val warn">10 days</span>
+    </div>
+
+    <div class="punch step s7">
+      <h2>28 &divide; 7 = four days of stock.</h2>
+      <h2 class="bad step s8" style="margin-top:1.4cqw">The order needed placing six days ago.</h2>
+      <p class="step s8">And the screen stays green the whole way down.</p>
+    </div>
+
+    <p class="ask step s9">
+      Has any stock system you have used ever divided one by the other?
+    </p>
+
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="replay()">Replay</button>
+  <button onclick="document.getElementById('stage').requestFullscreen()">Full screen</button>
+</div>
+
+<p class="note">
+  Thirteen seconds. To record it: press <b>Win + Shift + S</b>, choose the record option,
+  drag a box around the square, then press Replay. Stop when the question has been up for
+  a couple of seconds. Upload the clip straight to LinkedIn.
+</p>
+
+<script>
+  function replay() {
+    const s = document.getElementById('stage');
+    s.classList.remove('run');
+    // Forcing a reflow is what makes the animations start again rather than
+    // being treated as already finished.
+    void s.offsetWidth;
+    s.classList.add('run');
+  }
+</script>
+
+</body>
+</html>

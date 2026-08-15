@@ -42,10 +42,7 @@ const REGISTRY: Record<string, RegisteredConnector> = {
     label: "Samsara",
     defaultBaseUrl: SAMSARA_BASE_URL,
     hint: "In Samsara: Settings → API Tokens. Read-only is enough.",
-    // Vehicles only. The Connector interface allows trips and this adapter
-    // does not implement them yet — saying otherwise here would put a claim on
-    // the screen the code cannot meet.
-    brings: "Vehicles",
+    brings: "Vehicles and trips, with the sites they ran from",
     untested: true,
     fields: [
       { key: "token", label: "API token", secret: true, placeholder: "Paste the token" },
@@ -57,7 +54,7 @@ const REGISTRY: Record<string, RegisteredConnector> = {
     label: "Motive",
     defaultBaseUrl: MOTIVE_BASE_URL,
     hint: "In Motive: the admin menu at the bottom → Developers → Request API Key.",
-    brings: "Vehicles",
+    brings: "Vehicles and trips, with start and end addresses",
     untested: true,
     fields: [
       { key: "token", label: "API key", secret: true, placeholder: "Paste the key" },
@@ -72,7 +69,10 @@ const REGISTRY: Record<string, RegisteredConnector> = {
       "Geotab signs in rather than using a key, so it needs the three things you " +
       "use to log in yourself. Best practice is a service account with read-only " +
       "access rather than your own login.",
-    brings: "Vehicles",
+    // Geotab records where a trip stopped and not where it started, so its
+    // trips give mileage but cannot feed the depot mapping. Said here rather
+    // than discovered later by someone wondering why a check stayed silent.
+    brings: "Vehicles and trips, but no start locations",
     untested: true,
     fields: [
       {

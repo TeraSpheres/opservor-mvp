@@ -204,3 +204,158 @@ export async function syncVehicles(
 
   return summary;
 }
+
+/* ------------------------------------------------------------------ *
+ * Trips.
+ *
+ * Written after vehicles, and only ever after them, because a trip is
+ * meaningless without the vehicle it belongs to. The provider names a vehicle
+ * by its own id, so the identity map built during the vehicle sync is what
+ * turns that into something Opservor can store.
+ *
+ * Trips are a ledger rather than a state table: a journey that happened does
+ * not change afterwards. So an already-imported trip is skipped rather than
+ * rewritten, and the provider's own id is what makes that possible.
+ * ------------------------------------------------------------------ */
+
+export async function syncTrips(
+  supabase: SupabaseClient,
+  connector: Connector,
+  cfg: ConnectorConfig,
+  companyId: string,
+  connectionId: string,
+  since: string,
+  summary: SyncSummary
+): Promise<void> {
+  if (!connector.fetchTrips) {
+    summary.warnings.push(`${connector.provider} does not provide trips.`);
+    return;
+  }
+
+  // Which provider vehicle id maps to which of ours. Built by the vehicle
+  // sync that ran moments ago.
+  const { data: vehicleRefs, error: refError } = await supabase
+    .from("integration_external_ref")
+    .select("external_id, internal_id")
+    .eq("company_id", companyId)
+    .eq("connection_id", connectionId)
+    .eq("entity_type", "vehicle");
+
+  if (refError) {
+    summary.errors.push(`Could not read the vehicle map: ${refError.message}`);
+    return;
+  }
+
+  const vehicleFor = new Map(
+    (vehicleRefs ?? []).map((r) => [String(r.external_id), String(r.internal_id)])
+  );
+
+  if (vehicleFor.size === 0) {
+    summary.warnings.push("No vehicles are mapped yet, so trips were skipped.");
+    return;
+  }
+
+  // Trips already imported for this connection, so a second run adds only
+  // what is new rather than duplicating a year of journeys.
+  const { data: tripRefs } = await supabase
+    .from("integration_external_ref")
+    .select("external_id")
+    .eq("company_id", companyId)
+    .eq("connection_id", connectionId)
+    .eq("entity_type", "trip");
+
+  const alreadyHave = new Set((tripRefs ?? []).map((r) => String(r.external_id)));
+
+  let cursor: string | undefined;
+  let guard = 0;
+
+  do {
+    if (++guard > 500) {
+      summary.errors.push("Stopped after 500 pages of trips — the provider kept returning a cursor.");
+      break;
+    }
+
+    let page;
+    try {
+      page = await connector.fetchTrips(cfg, since, cursor);
+    } catch (e) {
+      summary.errors.push(e instanceof Error ? e.message : String(e));
+      break;
+    }
+
+    if (page.warnings?.length) summary.warnings.push(...page.warnings);
+
+    const newRows: Record<string, unknown>[] = [];
+    const newRefs: Record<string, unknown>[] = [];
+
+    for (const t of page.items) {
+      summary.tripsSeen++;
+      if (alreadyHave.has(t.externalId)) continue;
+
+      const vehicleId = vehicleFor.get(t.vehicleExternalId);
+      if (!vehicleId) {
+        // A trip for a vehicle we have never seen. Reported rather than
+        // dropped silently, because it usually means the vehicle sync was
+        // cut short and the fleet is incomplete.
+        summary.warnings.push(
+          `A trip referenced vehicle ${t.vehicleExternalId}, which is not in the fleet list.`
+        );
+        continue;
+      }
+
+      newRows.push({
+        company_id: companyId,
+        vehicle_id: vehicleId,
+        date: t.date,
+        miles_driven: t.distanceMiles,
+        fuel_used: t.fuelUsed ?? null,
+        origin: t.origin ?? null,
+        destination: t.destination ?? null,
+        status: t.status ?? "completed",
+      });
+      newRefs.push({
+        company_id: companyId,
+        connection_id: connectionId,
+        entity_type: "trip",
+        external_id: t.externalId,
+      });
+      alreadyHave.add(t.externalId);
+    }
+
+    if (newRows.length) {
+      const { data: inserted, error } = await supabase
+        .from("fleet_trip")
+        .insert(newRows)
+        .select("id");
+
+      if (error) {
+        summary.errors.push(`Could not write trips: ${error.message}`);
+        break;
+      }
+
+      // The reference rows can only be written once the trips have ids, and
+      // they must line up — insert returns rows in the order they were sent.
+      const ids = (inserted ?? []).map((r) => String(r.id));
+      const refsWithIds = newRefs
+        .map((ref, i) => (ids[i] ? { ...ref, internal_id: ids[i] } : null))
+        .filter(Boolean) as Record<string, unknown>[];
+
+      if (refsWithIds.length) {
+        const { error: refErr } = await supabase
+          .from("integration_external_ref")
+          .insert(refsWithIds);
+        if (refErr) {
+          // The trips are in but unmapped, which would mean importing them
+          // again next time. Worth saying out loud.
+          summary.warnings.push(
+            `Trips were imported but not all could be recorded as seen: ${refErr.message}`
+          );
+        }
+      }
+
+      summary.tripsCreated += ids.length;
+    }
+
+    cursor = page.cursor;
+  } while (cursor);
+}

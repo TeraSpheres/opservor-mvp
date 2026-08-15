@@ -52,6 +52,83 @@ interface SamsaraPage<T> {
   message?: string;
 }
 
+interface SamsaraAddress {
+  address?: string;
+  name?: string;
+  id?: number;
+}
+
+interface SamsaraTrip {
+  startMs?: number;
+  endMs?: number;
+  startLocation?: string;
+  endLocation?: string;
+  startAddress?: SamsaraAddress;
+  endAddress?: SamsaraAddress;
+  distanceMeters?: number;
+  fuelConsumedMl?: number;
+  startOdometer?: number;
+  endOdometer?: number;
+  [k: string]: unknown;
+}
+
+/** The trips endpoint returns a bare object, not the usual data/pagination envelope. */
+interface SamsaraTripPage {
+  trips?: SamsaraTrip[];
+}
+
+const METRES_PER_MILE = 1609.344;
+const ML_PER_LITRE = 1000;
+
+/* An ongoing trip is returned with the largest possible 64-bit integer as its
+ * end. Treating that as a real timestamp would produce a journey ending in the
+ * year 292 million, so it is read as "still running" instead. */
+const STILL_RUNNING = 9223372036854775807;
+
+/**
+ * Samsara names a place two ways: a saved address if the point falls inside
+ * one the customer has drawn, and a plain string otherwise. The saved name is
+ * preferred because it is what the customer calls the site — and matching a
+ * depot by name is what lets Opservor work out which vehicles serve where.
+ */
+function place(addr?: SamsaraAddress, fallback?: string): string | undefined {
+  const named = (addr?.name || "").trim();
+  if (named) return named;
+  const line = (addr?.address || "").trim();
+  if (line) return line;
+  const plain = (fallback || "").trim();
+  return plain || undefined;
+}
+
+function toCanonicalTrip(vehicleExternalId: string, t: SamsaraTrip): CanonicalTrip | null {
+  if (t.startMs == null) return null;
+
+  const running = t.endMs == null || t.endMs >= STILL_RUNNING;
+  const started = new Date(t.startMs);
+  if (Number.isNaN(started.getTime())) return null;
+
+  return {
+    // Samsara gives trips no id of their own, so one is composed from the
+    // vehicle and the start instant. Both are stable, which is what stops a
+    // second sync inserting the same journey again.
+    externalId: `${vehicleExternalId}:${t.startMs}`,
+    vehicleExternalId,
+    date: started.toISOString().slice(0, 10),
+    distanceMiles:
+      t.distanceMeters != null
+        ? Math.round((t.distanceMeters / METRES_PER_MILE) * 10) / 10
+        : 0,
+    fuelUsed:
+      t.fuelConsumedMl != null
+        ? Math.round((t.fuelConsumedMl / ML_PER_LITRE) * 10) / 10
+        : undefined,
+    origin: place(t.startAddress, t.startLocation),
+    destination: place(t.endAddress, t.endLocation),
+    status: running ? "in_progress" : "completed",
+    raw: t as Record<string, unknown>,
+  };
+}
+
 async function get<T>(
   cfg: ConnectorConfig,
   path: string,
@@ -158,15 +235,82 @@ export const samsaraConnector: Connector = {
       warnings: warnings.length ? warnings : undefined,
     };
   },
+
+  /* Trips.
+   *
+   * Samsara gives trips for one vehicle at a time — vehicleId is required —
+   * so this walks the fleet rather than asking for all of it. The cursor
+   * carries both the list of vehicles and how far through it we are, so the
+   * fleet is fetched once per sync rather than once per batch, and a single
+   * request handles a bounded number of vehicles so it cannot run past the
+   * route's time limit on a large fleet.
+   */
+  async fetchTrips(cfg, since, cursor): Promise<FetchResult<CanonicalTrip>> {
+    // Their window is capped at 90 days. A longer request is clamped rather
+    // than left to fail or, worse, silently return nothing.
+    const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000;
+    const earliest = Date.now() - NINETY_DAYS;
+    const asked = Date.parse(since);
+    const startMs = Math.max(Number.isNaN(asked) ? earliest : asked, earliest);
+    const endMs = Date.now();
+
+    let ids: string[];
+    let at: number;
+
+    if (cursor) {
+      const state = JSON.parse(cursor) as { ids: string[]; at: number };
+      ids = state.ids;
+      at = state.at;
+    } else {
+      ids = [];
+      let after: string | undefined;
+      do {
+        const page = await get<SamsaraVehicle>(cfg, "/fleet/vehicles", {
+          limit: String(PAGE_SIZE),
+          after,
+        });
+        for (const v of page.data ?? []) if (v?.id) ids.push(String(v.id));
+        after = page.pagination?.hasNextPage ? page.pagination?.endCursor : undefined;
+      } while (after);
+      at = 0;
+    }
+
+    const BATCH = 10;
+    const slice = ids.slice(at, at + BATCH);
+    const items: CanonicalTrip[] = [];
+    const warnings: string[] = [];
+
+    for (const vehicleId of slice) {
+      let body: SamsaraTripPage;
+      try {
+        body = (await get<never>(cfg, "/v1/fleet/trips", {
+          vehicleId,
+          startMs: String(startMs),
+          endMs: String(endMs),
+        })) as unknown as SamsaraTripPage;
+      } catch (e) {
+        // One vehicle refusing must not cost the rest of the fleet.
+        warnings.push(
+          `Could not read trips for vehicle ${vehicleId}: ${
+            e instanceof Error ? e.message : "unknown error"
+          }`
+        );
+        continue;
+      }
+
+      for (const t of body.trips ?? []) {
+        const trip = toCanonicalTrip(vehicleId, t);
+        if (trip) items.push(trip);
+      }
+    }
+
+    const next = at + BATCH;
+    return {
+      items,
+      cursor: next < ids.length ? JSON.stringify({ ids, at: next }) : undefined,
+      warnings: warnings.length ? warnings : undefined,
+    };
+  },
 };
 
-/* Trips are deliberately absent for now.
- *
- * Samsara exposes journey data through several endpoints with materially
- * different shapes, and picking the wrong one would mean rewriting the
- * mapping later. Vehicles alone prove the whole path end to end — fetch,
- * translate, match to an existing record, store — which is what this first
- * connector is for. Trips follow once there is a real account to see the
- * actual payloads against.
- */
 export type { CanonicalTrip };

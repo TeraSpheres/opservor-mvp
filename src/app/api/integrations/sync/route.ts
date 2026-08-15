@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
 import { getConnector } from "@/lib/connectors";
-import { syncVehicles } from "@/lib/connectors/sync";
+import { syncVehicles, syncTrips } from "@/lib/connectors/sync";
 
 /* Running a sync.
  *
@@ -91,13 +91,23 @@ export async function POST(request: Request) {
     // a vehicle rather than create a duplicate of it.
     const summary = await syncVehicles(admin, connector, cfg, companyId, conn.id as string);
 
+    // Trips only after vehicles, and only ever after them — a trip is
+    // meaningless without the vehicle it belongs to, and the mapping the
+    // vehicle sync just built is what resolves one to the other.
+    //
+    // Ninety days because that is Samsara's ceiling and a sensible first
+    // window for the others: enough history for a daily rate to mean
+    // something, not so much that a first sync takes all afternoon.
+    const since = new Date(Date.now() - 90 * 86400000).toISOString();
+    await syncTrips(admin, connector, cfg, companyId, conn.id as string, since, summary);
+
     const status =
       summary.errors.length ? "partial" :
       summary.warnings.length ? "partial" : "success";
 
     const message =
-      `${summary.vehiclesCreated} added, ${summary.vehiclesUpdated} updated, ` +
-      `${summary.vehiclesSeen} seen` +
+      `${summary.vehiclesCreated} vehicles added, ${summary.vehiclesUpdated} updated` +
+      (summary.tripsCreated ? `, ${summary.tripsCreated} trips imported` : "") +
       (summary.warnings.length ? ` · ${summary.warnings.length} warning(s)` : "");
 
     await note(admin, conn.id as string, status, message);
@@ -109,6 +119,8 @@ export async function POST(request: Request) {
       vehiclesSeen: summary.vehiclesSeen,
       vehiclesCreated: summary.vehiclesCreated,
       vehiclesUpdated: summary.vehiclesUpdated,
+      tripsSeen: summary.tripsSeen,
+      tripsCreated: summary.tripsCreated,
       warnings: summary.warnings.slice(0, 20),
       message,
     });

@@ -23,6 +23,7 @@
  */
 
 import type {
+  CanonicalTrip,
   CanonicalVehicle,
   Connector,
   ConnectorConfig,
@@ -52,6 +53,19 @@ interface GeotabDevice {
   deviceType?: string;
   comment?: string;
   activeTo?: string;
+  [k: string]: unknown;
+}
+
+/** Distance on a Geotab Trip is kilometres; everything downstream is miles. */
+const KM_PER_MILE = 1.609344;
+
+interface GeotabTrip {
+  device?: { id?: string };
+  start?: string;
+  stop?: string;
+  /** Kilometres. */
+  distance?: number;
+  drivingDuration?: string;
   [k: string]: unknown;
 }
 
@@ -220,6 +234,70 @@ export const geotabConnector: Connector = {
     if ((devices?.length ?? 0) >= RESULTS_LIMIT) {
       warnings.push(
         `Exactly ${RESULTS_LIMIT} devices came back, which is the limit asked for. ` +
+          `There may be more that were not read.`
+      );
+    }
+
+    return { items, warnings: warnings.length ? warnings : undefined };
+  },
+
+  /* Trips.
+   *
+   * One query covers the whole database, unlike Samsara. Distance arrives in
+   * kilometres and is converted, because everything downstream is in miles and
+   * a silent unit mismatch is a sixty per cent error that looks plausible.
+   *
+   * A real limitation, stated rather than hidden: a Geotab Trip records where
+   * it stopped and not where it started. Opservor works out which vehicles
+   * serve which depot from where journeys began, so Geotab trips give mileage
+   * but cannot feed the depot mapping the capacity check is built on. Anyone
+   * needing that will have to name the sites another way.
+   */
+  async fetchTrips(cfg, since, cursor): Promise<FetchResult<CanonicalTrip>> {
+    if (cursor) return { items: [] };
+
+    const { host, credentials } = await authenticate(cfg);
+    const fromDate = new Date(Date.parse(since) || Date.now() - 90 * 86400000).toISOString();
+
+    const trips = await rpc<GeotabTrip[]>(host, "Get", {
+      typeName: "Trip",
+      credentials,
+      search: { fromDate, toDate: new Date().toISOString() },
+      resultsLimit: RESULTS_LIMIT,
+    });
+
+    const items: CanonicalTrip[] = [];
+    const warnings: string[] = [];
+
+    for (const t of trips ?? []) {
+      const deviceId = t.device?.id;
+      if (!deviceId || !t.start) {
+        warnings.push("A trip arrived without a device or a start time.");
+        continue;
+      }
+      const started = new Date(t.start);
+      if (Number.isNaN(started.getTime())) continue;
+
+      items.push({
+        // Geotab trips have no id of their own in this shape, so one is made
+        // from the device and the start instant — both stable, which is what
+        // stops a second sync inserting the same journey again.
+        externalId: `${deviceId}:${t.start}`,
+        vehicleExternalId: deviceId,
+        date: started.toISOString().slice(0, 10),
+        distanceMiles:
+          t.distance != null ? Math.round((t.distance / KM_PER_MILE) * 10) / 10 : 0,
+        // Left empty deliberately. See the note above.
+        origin: undefined,
+        destination: undefined,
+        status: t.stop ? "completed" : "in_progress",
+        raw: t as Record<string, unknown>,
+      });
+    }
+
+    if ((trips?.length ?? 0) >= RESULTS_LIMIT) {
+      warnings.push(
+        `Exactly ${RESULTS_LIMIT} trips came back, which is the limit asked for. ` +
           `There may be more that were not read.`
       );
     }

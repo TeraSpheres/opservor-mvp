@@ -24,6 +24,9 @@ const NAV_ITEMS = [
   { href: "/hr", label: "HR", live: true },
   { href: "/safety", label: "Safety", live: true },
   { href: "/reports", label: "Reports", live: true },
+  // Last, because for most people Import is the better answer and a live
+  // connection is the thing they graduate to.
+  { href: "/connections", label: "Connections", live: true },
 ];
 
 export default function Sidebar({

@@ -42,7 +42,10 @@ const REGISTRY: Record<string, RegisteredConnector> = {
     label: "Samsara",
     defaultBaseUrl: SAMSARA_BASE_URL,
     hint: "In Samsara: Settings → API Tokens. Read-only is enough.",
-    brings: "Vehicles and trips",
+    // Vehicles only. The Connector interface allows trips and this adapter
+    // does not implement them yet — saying otherwise here would put a claim on
+    // the screen the code cannot meet.
+    brings: "Vehicles",
     untested: true,
     fields: [
       { key: "token", label: "API token", secret: true, placeholder: "Paste the token" },

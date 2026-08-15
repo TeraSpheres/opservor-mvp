@@ -101,6 +101,29 @@ export default function ConnectionsPage() {
     }
   }
 
+  const [syncing, setSyncing] = useState<string | null>(null);
+
+  async function sync(id: string) {
+    setSyncing(id);
+    setProblem(null);
+    setDone(null);
+    try {
+      const res = await fetch("/api/integrations/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const body = await res.json();
+      if (!res.ok) setProblem(body.error || "The sync did not complete.");
+      else setDone(body.message || "Done.");
+      await load();
+    } catch {
+      setProblem("Could not reach the server.");
+    } finally {
+      setSyncing(null);
+    }
+  }
+
   async function remove(id: string, name: string) {
     if (!confirm(`Remove "${name}"? The stored key is deleted with it.`)) return;
     setProblem(null);
@@ -166,12 +189,21 @@ export default function ConnectionsPage() {
                     <p className="mt-1 text-xs text-muted">{c.last_sync_message}</p>
                   )}
                 </div>
-                <button
-                  onClick={() => remove(c.id, c.label)}
-                  className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
-                >
-                  Remove
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => sync(c.id)}
+                    disabled={!c.hasCredential || syncing !== null}
+                    className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-light disabled:opacity-40"
+                  >
+                    {syncing === c.id ? "Reading…" : "Read now"}
+                  </button>
+                  <button
+                    onClick={() => remove(c.id, c.label)}
+                    className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>

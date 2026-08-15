@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
-import { getConnector } from "@/lib/connectors";
+import { getConnector, packCredentials, listProviders } from "@/lib/connectors";
 
 /* Connections.
  *
@@ -72,8 +72,11 @@ export async function GET() {
     // Integrations are not configured on this deployment. The list still works.
   }
 
+  // The provider list comes from the registry rather than a copy kept in the
+  // screen, so adding an adapter puts it on the page with no second edit.
   return NextResponse.json({
     connections: (data ?? []).map((c) => ({ ...c, hasCredential: withKey.includes(c.id as string) })),
+    providers: listProviders(),
   });
 }
 
@@ -92,7 +95,12 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { provider?: string; label?: string; baseUrl?: string; token?: string };
+  let body: {
+    provider?: string;
+    label?: string;
+    baseUrl?: string;
+    credentials?: Record<string, string>;
+  };
   try {
     body = await request.json();
   } catch {
@@ -101,16 +109,27 @@ export async function POST(request: Request) {
 
   const provider = (body.provider || "").trim().toLowerCase();
   const label = (body.label || "").trim();
-  const token = (body.token || "").trim();
   const baseUrl = (body.baseUrl || "").trim() || undefined;
 
   if (!provider) return NextResponse.json({ error: "Choose a system." }, { status: 400 });
   if (!label) return NextResponse.json({ error: "Give this connection a name." }, { status: 400 });
-  if (!token) return NextResponse.json({ error: "Paste the API key." }, { status: 400 });
 
   const connector = getConnector(provider);
   if (!connector) {
     return NextResponse.json({ error: `No adapter for ${provider} yet.` }, { status: 400 });
+  }
+
+  // One system wants a key, another wants a database, a username and a
+  // password. Packing happens here so nothing downstream — not the storage,
+  // not the encryption — has to know how many secrets a provider has.
+  let token: string;
+  try {
+    token = packCredentials(provider, body.credentials || {});
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Something is missing." },
+      { status: 400 }
+    );
   }
 
   // Check the key works before storing it. A connection saved with a bad key

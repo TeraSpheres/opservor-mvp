@@ -14,11 +14,21 @@
 
 import { useState, useEffect } from "react";
 
+interface CredentialField {
+  key: string;
+  label: string;
+  secret?: boolean;
+  placeholder?: string;
+  hint?: string;
+}
+
 interface Provider {
   id: string;
   label: string;
   hint: string;
   brings: string;
+  fields: CredentialField[];
+  untested?: boolean;
 }
 
 interface Connection {
@@ -33,23 +43,18 @@ interface Connection {
   hasCredential: boolean;
 }
 
-const PROVIDERS: Provider[] = [
-  {
-    id: "samsara",
-    label: "Samsara",
-    hint: "In Samsara: Settings → API Tokens. A read-only token is enough.",
-    brings: "Vehicles and trips",
-  },
-];
+
 
 export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
 
-  const [provider, setProvider] = useState(PROVIDERS[0].id);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [provider, setProvider] = useState("");
   const [label, setLabel] = useState("");
-  const [token, setToken] = useState("");
+  // Keyed by field, because a provider decides how many secrets it needs.
+  const [values, setValues] = useState<Record<string, string>>({});
   const [baseUrl, setBaseUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -64,7 +69,12 @@ export default function ConnectionsPage() {
       if (res.status === 401) { setUnavailable(true); return; }
       const body = await res.json();
       if (body.error) setProblem(body.error);
-      else setConnections(body.connections ?? []);
+      else {
+        setConnections(body.connections ?? []);
+        const list: Provider[] = body.providers ?? [];
+        setProviders(list);
+        if (!provider && list.length) setProvider(list[0].id);
+      }
     } catch {
       setProblem("Could not load connections.");
     } finally {
@@ -81,16 +91,16 @@ export default function ConnectionsPage() {
       const res = await fetch("/api/integrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, label, token, baseUrl }),
+        body: JSON.stringify({ provider, label, credentials: values, baseUrl }),
       });
       const body = await res.json();
       if (!res.ok) {
         setProblem(body.error || "That did not work.");
       } else {
         setDone(body.message || "Connected.");
-        // Cleared immediately. There is no reason for a key to sit in a form
-        // field after it has been stored, and every reason for it not to.
-        setToken("");
+        // Cleared immediately. There is no reason for a secret to sit in a
+        // form field after it has been stored, and every reason for it not to.
+        setValues({});
         setLabel("");
         await load();
       }
@@ -133,7 +143,7 @@ export default function ConnectionsPage() {
     await load();
   }
 
-  const chosen = PROVIDERS.find((p) => p.id === provider)!;
+  const chosen = providers.find((p) => p.id === provider) || null;
 
   return (
     <div className="mx-auto max-w-4xl px-8 py-8">
@@ -220,14 +230,16 @@ export default function ConnectionsPage() {
               <span className="text-sm text-ink">System</span>
               <select
                 value={provider}
-                onChange={(e) => setProvider(e.target.value)}
+                onChange={(e) => { setProvider(e.target.value); setValues({}); }}
                 className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"
               >
-                {PROVIDERS.map((p) => (
+                {providers.map((p) => (
                   <option key={p.id} value={p.id}>{p.label}</option>
                 ))}
               </select>
-              <span className="mt-1 block text-[11px] text-muted">Brings in: {chosen.brings}</span>
+              {chosen && (
+                <span className="mt-1 block text-[11px] text-muted">Brings in: {chosen.brings}</span>
+              )}
             </label>
 
             <label className="block">
@@ -245,19 +257,35 @@ export default function ConnectionsPage() {
             </label>
           </div>
 
-          <label className="mt-4 block">
-            <span className="text-sm text-ink">API key</span>
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Paste it here"
-              autoComplete="off"
-              spellCheck={false}
-              className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-ink"
-            />
-            <span className="mt-1 block text-[11px] text-muted">{chosen.hint}</span>
-          </label>
+          {chosen && (
+            <>
+              {chosen.fields.map((f) => (
+                <label key={f.key} className="mt-4 block">
+                  <span className="text-sm text-ink">{f.label}</span>
+                  <input
+                    type={f.secret ? "password" : "text"}
+                    value={values[f.key] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder || ""}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className={`mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink ${f.secret ? "font-mono" : ""}`}
+                  />
+                  {f.hint && <span className="mt-1 block text-[11px] text-muted">{f.hint}</span>}
+                </label>
+              ))}
+
+              <p className="mt-3 text-[11px] leading-relaxed text-muted">{chosen.hint}</p>
+
+              {chosen.untested && (
+                <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+                  This adapter was written from {chosen.label}&apos;s published documentation and has
+                  never been run against a live account. It may need adjusting the first time it
+                  meets one. Tell us what happens and it gets fixed.
+                </p>
+              )}
+            </>
+          )}
 
           <details className="mt-3">
             <summary className="cursor-pointer text-xs text-muted hover:text-ink">

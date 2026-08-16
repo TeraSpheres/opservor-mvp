@@ -350,8 +350,8 @@ function clientDeck() {
   );
 
   const steps = [
-    ['1', 'Count what actually left', '758 units shipped over the last 90 days. Not a forecast — that happened.'],
-    ['2', 'Turn it into a rate', '758 ÷ 90 = 7 units a day.'],
+    ['1', 'Count what actually left', '630 units shipped over the last 90 days. Not a forecast — that happened.'],
+    ['2', 'Turn it into a rate', '630 ÷ 90 = 7 units a day.'],
     ['3', 'Work out what is really yours', '46 on hand, 18 already promised to orders, so 28 can actually be sold.'],
     ['4', 'Divide', '28 ÷ 7 = 4 days of cover.'],
     ['5', 'Compare against the supplier', 'Four is less than ten. You are not approaching a problem. You are six days late.'],

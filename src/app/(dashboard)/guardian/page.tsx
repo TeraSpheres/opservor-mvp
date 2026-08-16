@@ -237,6 +237,13 @@ function FindingCard({
   );
 }
 
+/** One row of guardian_readiness(): a check, and whether it could run. */
+interface Readiness {
+  area: string;
+  ready: boolean;
+  reason: string | null;
+}
+
 export default function GuardianPage() {
   const [findings, setFindings] = useState<GuardianFinding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -246,6 +253,9 @@ export default function GuardianPage() {
   // that finds nothing are different facts, and collapsing them into the same
   // empty state is what made this impossible to diagnose from the screen.
   const [runError, setRunError] = useState<string | null>(null);
+  // What Guardian could not check, and why. An empty findings list means one of
+  // two very different things, and this is what tells them apart.
+  const [blocked, setBlocked] = useState<Readiness[]>([]);
   const [lastRun, setLastRun] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -281,7 +291,25 @@ export default function GuardianPage() {
       setFindings(rows);
       setLastRun(rows[0]?.last_seen_at ?? null);
     }
+
+    await loadReadiness();
     setIsLoading(false);
+  }
+
+  /**
+   * Asks what Guardian could not check.
+   *
+   * Failure here is deliberately quiet: on a database without 0021 the function
+   * does not exist, and a page that refuses to render its findings because a
+   * diagnostic is missing would be worse than the problem it diagnoses.
+   */
+  async function loadReadiness() {
+    const { data, error } = await supabase.rpc("guardian_readiness");
+    if (error || !data) {
+      setBlocked([]);
+      return;
+    }
+    setBlocked((data as Readiness[]).filter((r) => !r.ready));
   }
 
   async function run() {
@@ -336,6 +364,30 @@ export default function GuardianPage() {
         </div>
       )}
 
+      {/* Placed above the findings, not below. Something Guardian could not
+          check outranks anything it did, because the reader is about to draw a
+          conclusion from an absence. */}
+      {blocked.length > 0 && (
+        <div className="mb-5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-5">
+          <p className="text-sm font-medium text-amber-300">
+            {blocked.length === 1
+              ? "One check could not run."
+              : `${blocked.length} checks could not run.`}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Whatever is listed below was not examined. Treat it as unknown rather than clear.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {blocked.map((b) => (
+              <li key={b.area}>
+                <p className="text-sm font-medium text-ink">{b.area}</p>
+                <p className="text-xs text-muted">{b.reason}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {unavailable ? (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
           <p className="text-sm text-amber-300">Guardian is not available on this database.</p>
@@ -350,10 +402,18 @@ export default function GuardianPage() {
         </div>
       ) : findings.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-panel p-8 text-center">
-          <p className="text-sm text-ink">Nothing to flag.</p>
+          <p className="text-sm text-ink">
+            {blocked.length > 0 ? "Nothing to flag in what could be checked." : "Nothing to flag."}
+          </p>
           <p className="mt-1 text-xs text-muted">
-            Either everything is genuinely fine, or the checks have not been run yet.
-            Press <span className="text-ink">Run checks</span> to look now.
+            {blocked.length > 0 ? (
+              <>Not a clean bill of health — see above for what was left out.</>
+            ) : (
+              <>
+                Either everything is genuinely fine, or the checks have not been run yet.
+                Press <span className="text-ink">Run checks</span> to look now.
+              </>
+            )}
           </p>
         </div>
       ) : (

@@ -23,16 +23,41 @@
   :root {
     --ink:#FFFFFF; --dim:#5D6E85; --muted:#8496AC; --line:#243449;
     --green:#3FD9A0; --amber:#FFA940;
-    --display: Georgia, "Times New Roman", serif;
-    --body: "Segoe UI", -apple-system, system-ui, sans-serif;
-    --data: Consolas, ui-monospace, monospace;
+    /* Bahnschrift ships with Windows and is a condensed grotesque — the
+       register documentary titling uses. Everything falls back gracefully. */
+    --display: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", sans-serif;
+    --body: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --data: "Cascadia Mono", Consolas, ui-monospace, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: #05070C; min-height: 100vh; font-family: var(--body);
+    min-height: 100vh; font-family: var(--body); color: #8496AC;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #101B2B 0%, transparent 60%),
+      radial-gradient(900px 500px at 50% 110%, #0C1622 0%, transparent 55%),
+      #05070C;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1rem; padding: 1rem;
+    gap: 1.15rem; padding: 1.5rem 1rem 2rem;
+  }
+
+  /* Title above the frame. Outside the stage, so it never reaches the film. */
+  .slate {
+    display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; justify-content: center;
+    font-family: var(--data); font-size: .68rem; letter-spacing: .34em;
+    text-transform: uppercase; color: #46566B;
+  }
+  .slate b { color: #A9BDD4; font-weight: 600; letter-spacing: .3em; }
+  .slate i { font-style: normal; color: var(--green); letter-spacing: .2em; }
+
+  /* The glow sits on a wrapper, so the frame itself stays a hard-edged
+     rectangle — a rounded corner would be recorded as one. */
+  .frame {
+    position: relative; padding: 0; line-height: 0;
+    box-shadow:
+      0 0 0 1px #1C2739,
+      0 2rem 5rem -1rem rgba(0,0,0,.9),
+      0 0 8rem -2rem rgba(63,217,160,.28);
   }
 
   /* Width alone drives the frame; the height follows from the ratio. An
@@ -55,6 +80,20 @@
     transform-origin: center;
   }
 
+  /* Product screens are fitted, never filled.
+   *
+   * A screenshot is not a photograph: cropping a face by a few per cent costs
+   * nothing, cropping a sidebar costs the DEMO DATA badge and half the
+   * navigation. The Guardian capture is 1885x859, wider than 16:9, so "cover"
+   * was slicing both edges off before the zoom had even started.
+   *
+   * These shots also hold still. Any zoom over a fitted image crops it again,
+   * which is the thing being fixed. */
+  .shot img.fit {
+    object-fit: contain;
+    background: #05070C;
+  }
+
   /* The missing-shot card. Quiet on purpose: it should read as a gap in the
      film, not as a slide competing with the ones either side of it. The number
      and the filename are the only two things you act on. */
@@ -72,17 +111,34 @@
     color: #33465C;
   }
 
-  /* Lower third. Sits low so it never covers a product screen. */
+  /* A scrim under the caption rather than a shadow around it. Subtitles are
+     legible over any image this way, including a bright warehouse floor, and
+     it is what broadcast actually does. Fades with the caption. */
+  .scrim {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 34cqw;
+    background: linear-gradient(to top, rgba(3,6,11,.88) 0%, rgba(3,6,11,.55) 38%, transparent 100%);
+    opacity: 0; transition: opacity .4s ease; pointer-events: none;
+  }
+  .scrim.on { opacity: 1; }
+
   .cap {
-    position: absolute; left: 0; right: 0; bottom: 6cqw;
-    display: flex; justify-content: center; padding: 0 8cqw;
+    position: absolute; left: 0; right: 0; bottom: 6.5cqw;
+    display: flex; justify-content: center; padding: 0 10cqw;
     opacity: 0; transition: opacity .35s ease;
   }
   .cap.on { opacity: 1; }
   .cap span {
-    font-family: var(--display); font-size: 2.3cqw; line-height: 1.35;
-    color: #fff; text-align: center; text-wrap: balance;
-    text-shadow: 0 .25cqw 1.2cqw rgba(0,0,0,.95), 0 0 .5cqw rgba(0,0,0,.9);
+    font-family: var(--display); font-size: 2.5cqw; font-weight: 600;
+    line-height: 1.3; letter-spacing: .01em;
+    color: #F4F8FC; text-align: center; text-wrap: balance;
+    text-shadow: 0 .15cqw .9cqw rgba(0,0,0,.7);
+  }
+  /* A hairline above the caption. Small thing, but it stops the words floating
+     loose over the picture and reads as deliberate. */
+  .cap span::before {
+    content: ''; display: block; width: 3.2cqw; height: .18cqw;
+    background: var(--green); opacity: .85;
+    margin: 0 auto 1.4cqw;
   }
 
   /* Shot 2's time-and-mark lockup. */
@@ -100,19 +156,23 @@
 
   /* End card. */
   .end {
-    position: absolute; inset: 0; background: rgba(5,7,12,.72);
+    position: absolute; inset: 0;
+    background: radial-gradient(90cqw 60cqw at 50% 45%, rgba(8,14,24,.82) 0%, rgba(3,5,10,.94) 70%);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1.6cqw; opacity: 0; transition: opacity .8s ease;
+    gap: 1.5cqw; opacity: 0; transition: opacity .8s ease;
   }
   .end.on { opacity: 1; }
-  .end img { width: 11cqw; height: auto; }
+  .end img { width: 9.5cqw; height: auto; filter: drop-shadow(0 0 2.5cqw rgba(63,217,160,.22)); }
   .end .name {
-    font-family: var(--data); font-size: 3.4cqw; letter-spacing: .42em;
-    color: #fff; padding-left: .42em;
+    font-family: var(--display); font-size: 4cqw; font-weight: 600;
+    letter-spacing: .46em; color: #fff; padding-left: .46em;
   }
-  .end .line { font-family: var(--display); font-size: 1.7cqw; color: #C4D3E4; }
-  .end .small { font-family: var(--data); font-size: .95cqw; letter-spacing: .2em; color: var(--dim); }
-  .end .legal { position: absolute; bottom: 3cqw; font-size: .8cqw; color: #46566B; }
+  .end .rule { width: 12cqw; height: .12cqw; background: linear-gradient(to right, transparent, var(--green), transparent); }
+  .end .line {
+    font-family: var(--body); font-size: 1.5cqw; color: #C4D3E4; letter-spacing: .02em;
+  }
+  .end .small { font-family: var(--data); font-size: .9cqw; letter-spacing: .28em; color: #5D6E85; }
+  .end .legal { position: absolute; bottom: 3cqw; font-size: .78cqw; color: #33465C; letter-spacing: .1em; }
 
   /* Progress. Hidden while playing so a recording stays clean. */
   .bar { position: absolute; left: 0; bottom: 0; height: .35cqw; width: 100%; background: rgba(255,255,255,.08); opacity: 0; transition: opacity .3s; }
@@ -131,22 +191,41 @@
     padding: 1.2cqw 3cqw;
   }
 
-  .controls { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; justify-content: center; }
-  button {
-    font-family: var(--data); font-size: .7rem; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted);
-    background: #101927; border: 1px solid var(--line);
-    border-radius: 2rem; padding: .5rem 1.05rem; cursor: pointer;
+  .controls {
+    display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; justify-content: center;
+    background: rgba(12,19,30,.7); border: 1px solid #18222F;
+    border-radius: 3rem; padding: .45rem .6rem;
+    backdrop-filter: blur(8px);
   }
-  button:hover { color: var(--ink); border-color: var(--green); }
-  .read { font-family: var(--data); font-size: .7rem; color: var(--dim); letter-spacing: .1em; }
-  .note { font-size: .76rem; color: #5D6E85; text-align: center; max-width: 54rem; line-height: 1.65; }
-  .note b { color: #8FA2B8; }
+  button {
+    font-family: var(--data); font-size: .66rem; letter-spacing: .16em;
+    text-transform: uppercase; color: #8FA2B8;
+    background: transparent; border: 1px solid transparent;
+    border-radius: 2rem; padding: .5rem 1rem; cursor: pointer;
+    transition: color .15s, background .15s, border-color .15s;
+  }
+  button:hover { color: #fff; background: #17222F; border-color: #24344A; }
+  button.key { color: #05070C; background: var(--green); font-weight: 700; }
+  button.key:hover { color: #05070C; background: #56E7B2; border-color: transparent; }
+  .sep { width: 1px; height: 1.1rem; background: #1E2A3A; margin: 0 .25rem; }
+  .read {
+    font-family: var(--data); font-size: .66rem; color: #5D6E85;
+    letter-spacing: .14em; padding: 0 .7rem; font-variant-numeric: tabular-nums;
+  }
+  .note { font-size: .74rem; color: #46566B; text-align: center; max-width: 52rem; line-height: 1.7; }
+  .note b { color: #8FA2B8; font-weight: 600; }
+  .note code { font-family: var(--data); color: #5D8FA8; }
 </style>
 </head>
 <body>
 
+<div class="slate">
+  <b>Opservor</b> &middot; Film 01 <i>Four Days</i>
+</div>
+
+<div class="frame">
 <div class="stage" id="stage">
+  <div class="scrim" id="scrim"></div>
   <div class="cap" id="cap"><span></span></div>
   <div class="stamp" id="stamp">
     <div class="t">08:00</div>
@@ -155,6 +234,7 @@
   <div class="end" id="end">
     <img src="LOGO-teraspheres.png" alt="">
     <div class="name">OPSERVOR</div>
+    <div class="rule"></div>
     <div class="line">What is going to happen, and the numbers behind it</div>
     <div class="small">TERASPHERES &middot; OPSERVOR.COM</div>
     <div class="legal">Dramatisation. Product screens show demo data.</div>
@@ -162,9 +242,10 @@
   <div class="bar" id="bar"><i></i></div>
   <div class="big-play" id="play"><div>Press to play</div></div>
 </div>
+</div>
 
 <div class="controls">
-  <button onclick="start()">Play from the top</button>
+  <button class="key" onclick="start()">Play from the top</button>
   <button onclick="toggle()">Pause</button>
   <button onclick="stage.requestFullscreen()">Full screen</button>
   <button onclick="chrome()">Show / hide progress</button>
@@ -239,11 +320,11 @@ const SHOTS = [
     cap:"“How did you catch it?” — “I didn’t. Opservor did.”",
     todo:"Marcus opens the app. Over-the-shoulder on the tablet." },
 
-  { n:10,  dur:6,  title:"Guardian sees it",   motion:"in",    fallback:null,
+  { n:10,  dur:6,  title:"Guardian sees it",   motion:"still",    fallback:null, fit:true,
     cap:"",
     todo:"Screenshot the real BAK-00484 finding after running SEED_film01_stock.sql." },
 
-  { n:11,  dur:7, title:"Show your work",     motion:"still", fallback:null,
+  { n:11,  dur:7, title:"Show your work",     motion:"still", fallback:null, fit:true,
     cap:"",
     todo:"Record film01-show-your-work.html, or screenshot its finished state." },
 
@@ -251,7 +332,7 @@ const SHOTS = [
     cap:"“Thursday’s two units are confirmed.”",
     todo:"Sam under the van, checking the schedule." },
 
-  { n:13,  dur:6, title:"Calgary Depot",      motion:"in",    fallback:null,
+  { n:13,  dur:6, title:"Calgary Depot",      motion:"still",    fallback:null, fit:true,
     cap:"",
     todo:"Screenshot the real Calgary Depot finding after running SEED_film01_depot.sql." },
 
@@ -259,7 +340,7 @@ const SHOTS = [
     cap:"Neither of them knew about the other.",
     todo:"Maintenance screen and warehouse screen, joined by Guardian." },
 
-  { n:15,  dur:8, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
+  { n:15,  dur:8, title:"Guardian — the real screen", motion:"still", fallback:HAVE.guardian, fit:true,
     cap:"",
     todo:"The full Guardian dashboard. Slow push through the finding." },
 
@@ -284,6 +365,7 @@ const barEl = document.getElementById('bar');
 const barFill = barEl.firstElementChild;
 const readEl = document.getElementById('read');
 const playEl = document.getElementById('play');
+const scrimEl = document.getElementById('scrim');
 
 /* Every duration is multiplied by this. Pacing is a thing you judge by
  * watching, not by arithmetic, so it is adjustable here rather than being a
@@ -310,6 +392,7 @@ function build(s) {
     img.remove();
     layer.appendChild(todoCard(s));
   };
+  if (s.fit) img.classList.add('fit');
   img.src = candidates[0];
   layer.appendChild(img);
 
@@ -332,6 +415,7 @@ function clearAll() {
   clearInterval(ticker); ticker = null;
   layers.forEach(l => { l.classList.remove('on', 'fading'); });
   capEl.classList.remove('on');
+  scrimEl.classList.remove('on');
   stampEl.classList.remove('on');
   endEl.classList.remove('on');
   barFill.style.width = '0%';
@@ -382,6 +466,7 @@ function show(s, idx) {
   }
 
   capEl.classList.toggle('on', !!s.cap);
+  scrimEl.classList.toggle('on', !!s.cap);
   if (s.cap) capEl.firstElementChild.textContent = s.cap;
 
   stampEl.classList.toggle('on', !!s.stamp);

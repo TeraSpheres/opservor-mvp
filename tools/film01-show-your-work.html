@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Film 01 — Show your work</title>
+<style>
+  /* FILM 01, SHOT 11 — "SHOW YOUR WORK"
+   *
+   * The one frame in the film that is not a screenshot, and should not pretend
+   * to be. Every other screen is now real Opservor output; this is a
+   * deliberately stylised explainer of the arithmetic behind it, which is why
+   * it uses the product's colours but not its chrome — no sidebar, no buttons,
+   * nothing that could be mistaken for a screen you could click.
+   *
+   * The numbers are the ones the check computes from the seeded data. If any of
+   * them stops matching the real finding, this frame is wrong and the film says
+   * something the product does not.
+   *
+   * 1920 x 1080 exactly, for a 16:9 4K timeline. Press R to replay the reveal.
+   */
+
+  :root {
+    --ground:#0B1220; --panel:#17212F; --line:#243449;
+    --ink:#FFFFFF; --muted:#8496AC; --dim:#5D6E85;
+    --green:#3FD9A0; --amber:#FFA940; --red:#F8686B;
+    --display: Georgia, "Times New Roman", serif;
+    --body: "Segoe UI", -apple-system, system-ui, sans-serif;
+    --data: Consolas, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #05070C; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.25rem; padding: 1.25rem; font-family: var(--body);
+  }
+
+  /* Exactly 1920x1080 so a region grab needs no cropping, scaled down to fit
+     whatever screen it is being viewed on without changing the composition. */
+  .stage {
+    /* Width alone drives the box and aspect-ratio derives the height. Setting
+       an explicit height as well lets the two caps fight, and the winner is
+       whichever is smaller — which silently produces a frame that is not 16:9.
+       The second cap is expressed in vh so the height stays within the
+       viewport: 78vh tall means at most 78 * 16/9 = 138.6vh wide. */
+    width: 1920px;
+    max-width: min(94vw, 138.6vh);
+    aspect-ratio: 16 / 9;
+    background: var(--ground);
+    position: relative; overflow: hidden;
+    outline: 1px solid #1B2637;
+    container-type: size;
+  }
+
+  .inner { position: absolute; inset: 0; padding: 5cqw 5.5cqw; display: flex; flex-direction: column; }
+
+  .kicker {
+    font-family: var(--data); font-size: 1cqw; letter-spacing: .34em;
+    color: var(--dim); text-transform: uppercase; margin-bottom: 1.1cqw;
+  }
+  h1 {
+    font-family: var(--display); font-size: 3.1cqw; font-weight: 700;
+    color: var(--ink); line-height: 1.1; margin-bottom: .5cqw;
+  }
+  .item { font-family: var(--data); font-size: 1.3cqw; color: var(--muted); letter-spacing: .08em; }
+
+  .grid {
+    margin-top: 3.4cqw;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5cqw 2.4cqw;
+  }
+
+  .step {
+    background: var(--panel); border: 1px solid var(--line); border-radius: .9cqw;
+    padding: 1.7cqw 1.9cqw; display: flex; gap: 1.4cqw; align-items: flex-start;
+  }
+  .num {
+    font-family: var(--data); font-size: 1.1cqw; font-weight: 700; color: var(--green);
+    background: #1C2A3C; border-radius: 50%;
+    width: 2.4cqw; height: 2.4cqw; flex: 0 0 2.4cqw;
+    display: grid; place-items: center; margin-top: .3cqw;
+  }
+  .body-txt { min-width: 0; }
+  .lab { font-size: 1.15cqw; color: var(--muted); margin-bottom: .45cqw; }
+  .sum {
+    font-family: var(--data); font-size: 2.05cqw; font-weight: 700; color: var(--ink);
+    font-variant-numeric: tabular-nums; line-height: 1.25;
+  }
+  .sum .eq { color: var(--green); }
+  .sum .warn { color: var(--amber); }
+
+  .verdict {
+    margin-top: 2.6cqw;
+    background: #2A1216; border: 1px solid #5A2027; border-left: .4cqw solid var(--red);
+    border-radius: .9cqw; padding: 2cqw 2.2cqw;
+    display: flex; align-items: baseline; gap: 1.6cqw; flex-wrap: wrap;
+  }
+  .verdict .big {
+    font-family: var(--data); font-size: 3cqw; font-weight: 700; color: var(--red);
+    font-variant-numeric: tabular-nums;
+  }
+  .verdict .say { font-family: var(--display); font-size: 1.75cqw; color: #F3C9CB; }
+
+  .foot {
+    margin-top: auto; display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--data); font-size: .95cqw; color: var(--dim); letter-spacing: .12em;
+  }
+
+  /* The reveal. Each step lands as the narrator reaches it, and the verdict
+     waits until all four are up — the point is that it follows from them. */
+  .rise { opacity: 0; transform: translateY(1.1cqw); }
+  .run .rise { animation: rise .5s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .run .s0 { animation-delay: .2s; }
+  .run .s1 { animation-delay: 1.2s; }
+  .run .s2 { animation-delay: 2.6s; }
+  .run .s3 { animation-delay: 4.0s; }
+  .run .s4 { animation-delay: 5.4s; }
+  .run .s5 { animation-delay: 7.2s; }
+
+  .controls { display: flex; gap: .6rem; }
+  button {
+    font-family: var(--data); font-size: .72rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    background: #101927; border: 1px solid var(--line);
+    border-radius: 2rem; padding: .55rem 1.1rem; cursor: pointer;
+  }
+  button:hover { color: var(--ink); border-color: var(--green); }
+  .note {
+    font-size: .76rem; color: #5D6E85; text-align: center; max-width: 52rem; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage run" id="stage">
+  <div class="inner">
+
+    <div class="rise s0">
+      <div class="kicker">How this was worked out</div>
+      <h1>Four days of cover.</h1>
+      <div class="item">BAK-00484 &middot; Brake Actuator Kit 484 &middot; Supplier 9</div>
+    </div>
+
+    <div class="grid">
+      <div class="step rise s1">
+        <div class="num">1</div>
+        <div class="body-txt">
+          <div class="lab">Count what actually left</div>
+          <div class="sum">630 &divide; 90 days <span class="eq">= 7 a day</span></div>
+        </div>
+      </div>
+
+      <div class="step rise s2">
+        <div class="num">2</div>
+        <div class="body-txt">
+          <div class="lab">Count what is really there</div>
+          <div class="sum">46 &minus; 18 held <span class="eq">= 28</span></div>
+        </div>
+      </div>
+
+      <div class="step rise s3">
+        <div class="num">3</div>
+        <div class="body-txt">
+          <div class="lab">Turn stock into time</div>
+          <div class="sum">28 &divide; 7 <span class="warn">= 4 days</span></div>
+        </div>
+      </div>
+
+      <div class="step rise s4">
+        <div class="num">4</div>
+        <div class="body-txt">
+          <div class="lab">Compare it with the supplier</div>
+          <div class="sum">10 day lead &minus; 4 <span class="warn">= 6 short</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict rise s5">
+      <span class="big">6 DAYS</span>
+      <span class="say">with nothing on the shelf, even if the order goes today.</span>
+    </div>
+
+    <div class="foot rise s5">
+      <span>REORDER LEVEL 26 &middot; AVAILABLE 28 &middot; STOCK SCREEN SAYS IN STOCK</span>
+      <span>OPSERVOR &middot; GUARDIAN</span>
+    </div>
+
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="replay()">Replay</button>
+  <button onclick="document.getElementById('stage').requestFullscreen()">Full screen</button>
+</div>
+
+<p class="note">
+  1920 &times; 1080. Record with <b>Win + Shift + S</b> (choose the record option) and drag a box
+  around the frame, or grab a still of the finished state. The reveal runs about eight seconds,
+  which is what shot 11 is allotted.
+</p>
+
+<script>
+  function replay() {
+    const s = document.getElementById('stage');
+    s.classList.remove('run');
+    // Forcing a reflow is what restarts the animations rather than leaving
+    // them treated as already finished.
+    void s.offsetWidth;
+    s.classList.add('run');
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'r' || e.key === 'R') replay(); });
+</script>
+
+</body>
+</html>

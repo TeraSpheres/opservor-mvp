@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Already Too Late — the cut</title>
+<title>Already Too Late — the film</title>
 <style>
   :root {
     --ground:#080C14; --panel:#111A26; --card:#141E2C; --line:#233246;
     --ink:#F2F6FA; --muted:#8FA2B8; --dim:#61748C;
-    --green:#3FD9A0; --amber:#FFA940; --blue:#5EA8FF;
+    --green:#3FD9A0; --amber:#FFA940; --blue:#5EA8FF; --violet:#B78BFF;
     --display: Georgia, "Times New Roman", serif;
     --body: "Segoe UI", -apple-system, system-ui, sans-serif;
     --data: Consolas, ui-monospace, monospace;
@@ -20,7 +20,7 @@
     font-family: var(--body); line-height: 1.6;
     padding: 3rem 1.25rem 6rem;
   }
-  .wrap { max-width: 60rem; margin: 0 auto; }
+  .wrap { max-width: 62rem; margin: 0 auto; }
 
   .top { border-bottom: 1px solid var(--line); padding-bottom: 2rem; margin-bottom: 2.5rem; }
   .eyebrow {
@@ -31,7 +31,7 @@
     font-family: var(--display); font-size: clamp(2rem, 5vw, 3rem);
     line-height: 1.1; margin: .7rem 0 .9rem; font-weight: 700;
   }
-  .sub { color: var(--muted); font-size: 1.05rem; max-width: 44rem; }
+  .sub { color: var(--muted); font-size: 1.05rem; max-width: 45rem; }
   .facts {
     display: flex; flex-wrap: wrap; gap: 1.6rem; margin-top: 1.5rem;
     font-family: var(--data); font-size: .78rem; color: var(--dim);
@@ -43,32 +43,38 @@
     margin: 3.25rem 0 .5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
   }
   h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  h3.act {
+    font-family: var(--data); font-size: .72rem; letter-spacing: .24em;
+    text-transform: uppercase; color: var(--violet);
+    margin: 2.25rem 0 .9rem;
+  }
   .lede { color: var(--muted); margin-bottom: 1.5rem; max-width: 46rem; }
 
-  /* ---- shots ---- */
   .shot {
     background: var(--card); border: 1px solid var(--line); border-radius: .8rem;
     padding: 1.3rem 1.4rem; margin-bottom: 1rem;
   }
-  .shot header { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; margin-bottom: .7rem; }
+  .shot header { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; margin-bottom: .7rem; }
   .tc {
-    font-family: var(--data); font-size: .8rem; font-weight: 700; color: var(--amber);
+    font-family: var(--data); font-size: .78rem; font-weight: 700; color: var(--amber);
     background: #23180A; border: 1px solid #4A3616; border-radius: .35rem;
     padding: .12rem .5rem;
   }
   .shot header h3 { font-size: 1rem; font-weight: 600; }
   .tag {
-    font-family: var(--data); font-size: .62rem; letter-spacing: .14em;
-    text-transform: uppercase; color: var(--blue);
-    border: 1px solid #274465; border-radius: 2rem; padding: .1rem .55rem;
+    font-family: var(--data); font-size: .6rem; letter-spacing: .14em;
+    text-transform: uppercase; border-radius: 2rem; padding: .12rem .6rem;
   }
+  .tag.make { color: var(--amber); border: 1px solid #4A3616; background:#23180A; }
+  .tag.have { color: var(--green); border: 1px solid #1E4638; background:#0C1F19; }
 
   .file {
     font-family: var(--data); font-size: .74rem; color: var(--green);
     background: #0B121C; border: 1px solid var(--line); border-radius: .4rem;
-    padding: .45rem .7rem; display: block; margin-bottom: .8rem;
+    padding: .45rem .7rem; display: block; margin-bottom: .5rem;
     word-break: break-all;
   }
+  .onscreen { color: var(--muted); font-size: .93rem; margin-bottom: .5rem; }
 
   .cap {
     border-left: 2px solid var(--green); padding: .2rem 0 .2rem .95rem; margin: .85rem 0 .6rem;
@@ -77,9 +83,21 @@
     font-family: var(--data); font-size: .62rem; letter-spacing: .18em;
     text-transform: uppercase; color: var(--green); display: block; margin-bottom: .2rem;
   }
-  .cap p { font-family: var(--display); font-size: 1.15rem; color: var(--ink); }
-  .move { font-size: .88rem; color: var(--muted); }
+  .cap p { font-family: var(--display); font-size: 1.12rem; color: var(--ink); }
+  .move { font-size: .87rem; color: var(--muted); margin-top: .5rem; }
   .move b { color: var(--ink); font-weight: 600; }
+
+  .prompt { margin-top: .8rem; }
+  .prompt .label {
+    font-family: var(--data); font-size: .62rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--dim);
+  }
+  .prompt pre {
+    font-family: var(--data); font-size: .76rem; line-height: 1.6;
+    color: #C4D3E4; background: #0B121C; border: 1px solid var(--line);
+    border-radius: .5rem; padding: .8rem .9rem; margin-top: .35rem;
+    white-space: pre-wrap; word-break: break-word;
+  }
 
   .note {
     background: #14202B; border: 1px solid #24404F; border-left: 3px solid var(--blue);
@@ -121,19 +139,6 @@
   td { color: var(--muted); }
   td b { color: var(--ink); }
 
-  details { margin-top: 1rem; }
-  summary {
-    cursor: pointer; color: var(--muted); font-size: .9rem;
-    padding: .5rem 0; user-select: none;
-  }
-  summary:hover { color: var(--ink); }
-  .prompt pre {
-    font-family: var(--data); font-size: .76rem; line-height: 1.6;
-    color: #C4D3E4; background: #0B121C; border: 1px solid var(--line);
-    border-radius: .5rem; padding: .8rem .9rem; margin-top: .5rem;
-    white-space: pre-wrap; word-break: break-word;
-  }
-
   .foot { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
           color: var(--dim); font-size: .82rem; }
 </style>
@@ -142,225 +147,315 @@
 <div class="wrap">
 
 <div class="top">
-  <div class="eyebrow">Opservor &middot; the cut</div>
+  <div class="eyebrow">Opservor &middot; the film</div>
   <h1>Already Too Late</h1>
   <p class="sub">
-    Rewritten around the story the product actually produced. Every shot below is a file that
-    already exists in this folder &mdash; nothing left to generate, nothing left to decide.
-    Open CapCut and build it.
+    An ordinary Tuesday morning at a well-run plant. Everyone is early, everyone is competent,
+    every system is green &mdash; and the part that stopped the line went past saving nine days ago.
+    Thirteen shots, about seventy seconds.
   </p>
   <div class="facts">
-    <div><b>20 seconds</b>5 shots</div>
-    <div><b>0 to generate</b>all shot</div>
-    <div><b>One narrator</b>plus captions</div>
-    <div><b>~40 minutes</b>start to upload</div>
+    <div><b>~70 seconds</b>13 shots</div>
+    <div><b>7 to generate</b>6 you have</div>
+    <div><b>3 voices</b>plus captions</div>
+    <div><b>~2 hours</b>start to upload</div>
   </div>
 </div>
 
-<h2>Why the story changed</h2>
-<p class="lede">
-  The original script was built on a capacity clash &mdash; vehicles in for service on a busy dock
-  day. That check cannot run on this data: it works out which vehicles serve which site by matching
-  a trip's starting point against a site's name, exactly, and none of them match. So there was no
-  such finding to show.
-</p>
-<p class="lede">
-  What Guardian did produce is better. <b>Ten items from one supplier. Nine of them already past
-  the point where ordering could save them.</b> The most urgent has zero days of cover and goes out
-  at 7.62 a day. One order fixes all ten.
-</p>
+<h2>Read this before you generate anything</h2>
+
+<div class="note warn">
+  <b>Dana has never been generated.</b> In the shot you already have she is only a blurred shoulder,
+  so there is no face to stay consistent with. <b>Her portrait is the first thing to make</b>, and
+  every later Dana shot must be asked for in that same chat. Get her right before anything else
+  &mdash; she is in six of the thirteen shots.
+</div>
+
+<div class="note warn">
+  <b>Do not ask for a clock face showing 8:00.</b> Image generators cannot place clock hands
+  reliably &mdash; you will get 10:10 every time, because that is how clocks are photographed in
+  advertising. The shot below asks for a <b>digital</b> desk clock, and even then you should plan to
+  put <b>08:00</b> on screen as a caption in CapCut. Guaranteed correct, and it reads as deliberate
+  rather than as set dressing.
+</div>
+
 <div class="note">
-  <b>It is a sharper argument than the one it replaced.</b> A dock-and-maintenance clash needs
-  explaining. "Nine items were already too late and the screen never said so" does not &mdash; and
-  it lands on anyone who has ever run stock, which is a far larger audience than people who run
-  docks and fleets together.
+  <b>Nobody's mouth has to match the words.</b> Every talking shot below is framed wide, turned
+  away, or over a shoulder, and the dialogue rides as voice-over with captions. This is how most
+  corporate film is cut, it looks more expensive, and it removes the one step that never comes out
+  right.
 </div>
 
-<h2>The cut</h2>
+<!-- ============ ACT ONE ============ -->
+<h3 class="act">Act one &middot; the morning &middot; 0:00 – 0:26</h3>
 <p class="lede">
-  Five shots, four seconds each, one caption at a time, each one spoken by a single narrator.
-  The captions stay on screen regardless &mdash; most people watch with the sound off, so the film
-  has to work silent and be better with sound, never the other way round.
+  Nothing happens for twenty-six seconds, and that is the point. The audience has to believe this
+  is a good operation before it is told something went wrong in it. Rush this and the film has no
+  weight.
 </p>
 
-<!-- 1 -->
 <div class="shot">
-  <header><span class="tc">0:00 &ndash; 0:04</span><h3>The floor, working</h3></header>
-  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_41 PM.png</code>
-  <div class="cap">
-    <span class="lab">Caption</span>
-    <p>Everything on this floor was running properly.</p>
+  <header><span class="tc">0:00 – 0:06</span><h3>Dana arrives</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">She walks the main aisle in a charcoal coat, bag on her shoulder, coffee in
+    hand. Two workers in hi-vis and hard hats nod as she passes. Nobody is hurrying. Everything is
+    in order.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Tuesday. Everyone was early.</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses DANA</div>
+    <pre>Interior wide shot down the main aisle of a large, modern, immaculately kept distribution centre in western Canada. Walking towards camera in the centre of frame is Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal wool coat over a tailored blazer, a bag on her shoulder and a takeaway coffee cup in one hand. Two warehouse workers in yellow high-visibility vests and hard hats are passing her, one raising a hand in greeting. Forty-foot ceilings, white steel trusses, bright LED high-bay lighting, tall racking stacked with shrink-wrapped pallets, polished concrete floor with fresh yellow walkway markings. Early morning light. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
   </div>
-  <p class="move"><b>Movement:</b> slow zoom in, 100% &rarr; 108%. Start on the wide aisle.</p>
+  <p class="move"><b>Movement:</b> slow push in as she walks towards camera. Nothing else.</p>
 </div>
 
-<!-- 2 -->
 <div class="shot">
-  <header><span class="tc">0:04 &ndash; 0:08</span><h3>The maintenance bay</h3></header>
-  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_31 PM.png</code>
-  <div class="cap">
-    <span class="lab">Caption</span>
-    <p>Every system agreed. Nothing was flagged anywhere.</p>
+  <header><span class="tc">0:06 – 0:11</span><h3>The office door</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">She reaches the glass-walled mezzanine office and pushes the door open. Seen
+    from inside, so we watch her come in.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Every system was green.</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses DANA</div>
+    <pre>Interior shot from inside a modern glass-walled mezzanine office above a distribution centre floor, looking towards the door. Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, in a charcoal wool coat with a bag on her shoulder and a coffee cup in one hand, is pushing the glass door open and stepping in. The office is minimal and current: pale oak desk, a single large monitor, a black mesh chair, a low shelf. Through the glass wall behind her, the warehouse floor below in soft focus. Early morning light. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
   </div>
-  <p class="move"><b>Movement:</b> slow pan left to right. This shot earns its place by being
-    ordinary &mdash; it is the third thing in a row that looks fine.</p>
+  <p class="move"><b>Movement:</b> hold still. She enters frame and the door swings closed behind her.</p>
 </div>
 
-<!-- 3 -->
 <div class="shot">
-  <header><span class="tc">0:08 &ndash; 0:12</span><h3>The question</h3></header>
-  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_09 PM.png</code>
-  <div class="cap">
-    <span class="lab">Caption</span>
-    <p>Then the line stopped for want of a part.</p>
-  </div>
-  <p class="move"><b>Movement:</b> slow zoom in towards Marcus, 100% &rarr; 110%. His face is the
-    turn in the film &mdash; give the zoom somewhere to land.</p>
-</div>
-
-<!-- 4 -->
-<div class="shot">
-  <header><span class="tc">0:12 &ndash; 0:17</span><h3>The finding</h3><span class="tag">your product</span></header>
-  <code class="file">Screenshot 2026-08-15 191859.png</code>
-  <div class="cap">
-    <span class="lab">Caption</span>
-    <p>Nine of them were already past saving. Opservor said so.</p>
-  </div>
-  <p class="move"><b>Movement:</b> start framed on the headline, then <b>slowly push in towards
-    the numbers table</b> over the five seconds. The longest shot in the film, and the one people
-    screenshot &mdash; give it the extra second.</p>
-</div>
-
-<!-- 5 -->
-<div class="shot">
-  <header><span class="tc">0:17 &ndash; 0:20</span><h3>End card</h3></header>
-  <code class="file">ChatGPT Image Aug 15, 2026, 06_21_23 PM.png</code>
+  <header><span class="tc">0:11 – 0:16</span><h3>Eight o'clock</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">Close on the desk. A small digital clock, the coffee set down beside it, a
+    laptop being opened. No face &mdash; this is the shot that says what time it is.</p>
   <div class="cap">
     <span class="lab">On screen</span>
+    <p>08:00<br><span style="font-size:.9rem;color:var(--muted)">and the Opservor mark directly beneath it</span></p>
+  </div>
+  <code class="file">LOGO-opservor.png &nbsp;·&nbsp; already copied into this folder</code>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; no characters</div>
+    <pre>Close interior shot of a pale oak desk in a modern minimal office. On the desk: a small black digital desk clock with a plain glowing display, a takeaway coffee cup being set down beside it by a woman's hand, and a slim silver laptop with the lid halfway open. Soft early morning light from a glass wall to the left. Very shallow depth of field, the clock in sharp focus and the background softly blurred. Cinematic photography, 50mm macro, natural colour grade. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <p class="move"><b>Movement:</b> the hand withdraws, the laptop lid finishes opening. Camera locked off.</p>
+  <div class="note warn" style="margin-top:.9rem">
+    Whatever the clock ends up showing, <b>cover it with your own 08:00 caption</b>. Do not fight
+    the generator over four digits.
+  </div>
+  <div class="note" style="margin-top:.7rem">
+    <b>The logo goes on in CapCut, never in the prompt.</b> Ask an image generator for your brand
+    mark and you get a melted approximation of it &mdash; they cannot draw specific logos or
+    readable text. Overlaying the real file gives you the actual mark, sharp, at any size.
+    <br><br>
+    <b>How:</b> import <code style="color:var(--green)">LOGO-opservor.png</code>, drag it onto the
+    track <i>above</i> this clip, and scale it to about <b>8% of the frame width</b> &mdash; small.
+    Sit it directly under the 08:00, both in the top left, with the same left edge so they line up
+    as one lockup. Fade both in together over half a second.
+    <br><br>
+    <b>If it disappears against the bright desk</b>, use <code style="color:var(--green)">opservor-plate-512.png</code>
+    from your website brand folder instead, or drop the logo's opacity to 70% and move it over a
+    darker part of the frame. A logo you have to hunt for is worse than no logo.
+  </div>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:16 – 0:21</span><h3>She sits</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">Dana at the desk, coat off, laptop open, first sip of coffee. Calm. A person
+    at the start of a day she expects to be ordinary.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Nothing anywhere was flagged.</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses DANA</div>
+    <pre>Interior medium shot of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt, seated at a pale oak desk in a modern glass-walled office. Her laptop is open in front of her and she is lifting a takeaway coffee cup to drink, eyes on the screen, calm and unhurried. Through the glass wall behind her, the warehouse floor below in soft focus. Early morning light. Cinematic photography, 50mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <p class="move"><b>Movement:</b> she drinks, sets the cup down, keeps reading. Small and natural.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:21 – 0:26</span><h3>Marcus at the door</h3><span class="tag have">you have this</span></header>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_09 PM.png</code>
+  <p class="onscreen">Marcus in the doorway with his tablet. Dana has got up and gone to the glass
+    &mdash; the audience will not question it, films cut like this constantly.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice &middot; Marcus</span><p>"Morning. Line Three went down at eleven last night."</p></div>
+  <p class="move"><b>Movement:</b> very slow push in on Marcus.</p>
+</div>
+
+<!-- ============ ACT TWO ============ -->
+<h3 class="act">Act two &middot; the report &middot; 0:26 – 0:46</h3>
+
+<div class="shot">
+  <header><span class="tc">0:26 – 0:30</span><h3>"Go on."</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">Dana in profile at the glass, coffee still in hand, not turning round. Two
+    words, and the film turns on them.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice &middot; Dana</span><p>"Go on."</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses DANA</div>
+    <pre>Interior close profile shot of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt, standing in profile at a floor-to-ceiling glass wall holding a coffee cup at chest height. She is looking down at the warehouse floor below rather than at the person speaking to her. Her expression is level and attentive. Morning light from the side. Cinematic photography, 85mm lens, natural colour grade, shallow depth of field, the floor beyond the glass softly out of focus. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <p class="move"><b>Movement:</b> almost none. She blinks once. Let the stillness carry it.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:30 – 0:36</span><h3>The part they had</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">Marcus, medium, tablet in hand, explaining. A second angle on him &mdash; you
+    only have the doorway shot, and cutting back to it would look like a mistake.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice &middot; Marcus</span><p>"We had the part on the shelf. The system said so all week."</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses MARCUS</div>
+    <pre>Interior medium shot of Marcus, a Black man in his late thirties with close-cropped hair and a short neat beard, wearing a light blue oxford shirt with sleeves rolled to the elbow, a yellow high-visibility safety vest and an ID badge on a lanyard. He stands in a modern glass-walled mezzanine office holding a rugged tablet at chest height, one hand open in explanation, looking slightly off camera to the left. Tired and matter-of-fact rather than defensive. Behind him through the glass, the warehouse floor in soft focus. Morning light. Cinematic photography, 50mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <p class="move"><b>Movement:</b> his open hand turns over slightly as he speaks. Camera locked off.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:36 – 0:41</span><h3>The floor, working</h3><span class="tag have">you have this</span></header>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_41 PM.png</code>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Every count was right. Every shelf had stock on it.</p></div>
+  <p class="move"><b>Movement:</b> slow dolly forward down the aisle.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:41 – 0:46</span><h3>The maintenance bay</h3><span class="tag have">you have this</span></header>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_18_31 PM.png</code>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Nobody was careless. Nobody was wrong.</p></div>
+  <p class="move"><b>Movement:</b> slow pan left to right. This shot earns its place by being
+    ordinary &mdash; the fourth thing in a row that looks fine.</p>
+</div>
+
+<!-- ============ ACT THREE ============ -->
+<h3 class="act">Act three &middot; the finding &middot; 0:46 – 1:00</h3>
+
+<div class="shot">
+  <header><span class="tc">0:46 – 0:54</span><h3>What Opservor said</h3><span class="tag have">your product</span></header>
+  <code class="file">Screenshot 2026-08-15 191859.png</code>
+  <p class="onscreen">Full frame. The longest shot in the film, and the only one that shows what
+    you actually built.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>Nine of them were already past saving.</p></div>
+  <p class="move"><b>Movement:</b> start on the headline, <b>slowly push in towards the numbers
+    table</b> across the full eight seconds. Do not cut away early &mdash; this is the shot people
+    pause on.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">0:54 – 1:00</span><h3>Dana reads it</h3><span class="tag make">generate</span></header>
+  <p class="onscreen">Dana at the laptop, seated, looking at the screen. The coffee has gone cold
+    beside her. She is not surprised. She is working out how long it had been there.</p>
+  <div class="cap"><span class="lab">Caption &amp; voice &middot; Dana</span><p>"And it told us nine days ago."</p></div>
+  <div class="prompt">
+    <div class="label">Still prompt &middot; uses DANA</div>
+    <pre>Interior close shot of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt, seated at a pale oak desk and looking down at an open laptop screen. The screen light falls on her face. A forgotten takeaway coffee cup sits beside the laptop. Her expression is still and absorbed, working something out rather than reacting. Modern glass-walled office, morning light. Cinematic photography, 85mm lens, natural colour grade, shallow depth of field, background softly blurred. Photorealistic. No text, no signage, no logos, no watermarks. The laptop screen must be blank and unlit.</pre>
+  </div>
+  <p class="move"><b>Movement:</b> she looks up slowly, off camera. Nothing else moves.</p>
+</div>
+
+<!-- ============ ACT FOUR ============ -->
+<h3 class="act">Act four &middot; the close &middot; 1:00 – 1:10</h3>
+
+<div class="shot">
+  <header><span class="tc">1:00 – 1:05</span><h3>Evening</h3><span class="tag have">you have this</span></header>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_21_23 PM.png</code>
+  <div class="cap"><span class="lab">Caption &amp; voice</span><p>A stock screen tells you what you have. Not how long it lasts.</p></div>
+  <p class="move"><b>Movement:</b> slow dolly forward. Let it breathe.</p>
+</div>
+
+<div class="shot">
+  <header><span class="tc">1:05 – 1:10</span><h3>End card</h3><span class="tag have">same file</span></header>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_21_23 PM.png</code>
+  <div class="cap">
+    <span class="lab">On screen &middot; no voice</span>
     <p>OPSERVOR<br><span style="font-size:.9rem;color:var(--muted)">Operational intelligence for the people who run the floor</span><br><span style="font-size:.78rem;color:var(--dim)">TeraSpheres &middot; opservor.com</span></p>
   </div>
-  <p class="move"><b>Movement:</b> hold still, text fades up over the evening shot. Add one small
-    grey line at the bottom: <b>Dramatisation. Product screens show demo data.</b></p>
+  <code class="file">LOGO-teraspheres.png &nbsp;·&nbsp; already copied into this folder</code>
+  <p class="move"><b>Movement:</b> hold still, darken the image to about 40% brightness, then fade
+    up the mark and the words together. Add one small grey line at the bottom: <b>Dramatisation.
+    Product screens show demo data.</b></p>
+  <div class="note" style="margin-top:.7rem">
+    <b>Opservor's mark opens the film, TeraSpheres' closes it.</b> The product is what the viewer
+    was just shown; the company is who made it. Putting both marks in both places halves the weight
+    of each &mdash; one at each end reads as a signature.
+  </div>
 </div>
 
-<div class="note warn">
-  <b>Leave the DEMO DATA badge visible</b> in shot 4. It is in the top left of the screenshot
-  already. Nobody holds demo data against a product this early &mdash; but a screenshot that hides
-  it invites a question you do not want asked.
-</div>
-
-<h2>In CapCut</h2>
-<ol class="steps">
-  <li><b>New project, set the ratio to 1:1.</b> <span>Square. Your images are landscape, so square
-    crops off far less than vertical would, and LinkedIn treats square as well as it treats
-    vertical. That is where you are posting.</span></li>
-  <li><b>Import all five files</b> <span>and drag them onto the timeline in the order above.</span></li>
-  <li><b>Set each clip's duration.</b> <span>Four seconds each, except the finding at five and the
-    end card at three. Click the clip, then drag its edge or type the length.</span></li>
-  <li><b>Add the movement.</b> <span>Select a clip &rarr; <b>Animation</b> &rarr; <b>Zoom in</b> or
-    <b>Pan</b>. Keep every move slow. If it is noticeable, it is too fast.</span></li>
-  <li><b>Add the captions.</b> <span>One text block per shot, centred, large, held for the whole
-    clip. <b>No word-by-word animation</b> &mdash; it makes short clips unreadable.</span></li>
-  <li><b>Add the narration.</b> <span>See the voice section below &mdash; one voice, four lines,
-    generated from the caption blocks you just made.</span></li>
-  <li><b>Add music, no lyrics.</b> <span>Something low that builds. Search CapCut's library for
-    "corporate documentary" or "cinematic tension". Drop it to about 20% so it sits under the
-    voice rather than against it.</span></li>
-  <li><b>Export at 1080&times;1080, 30fps</b> <span>and upload straight to LinkedIn as a video
-    post.</span></li>
-</ol>
-
-<div class="note">
-  <b>On the captions:</b> put them in the lower third, not the middle. The middle of shot 4 is your
-  product screen, and a caption across it wastes the only frame that shows what you built.
-</div>
-
-<h2>The voice</h2>
+<!-- ============ VOICES ============ -->
+<h2>The voices</h2>
 <p class="lede">
-  <b>One narrator, not five.</b> This is narration, not a conversation &mdash; a single steady voice
-  across twenty seconds reads as authored, where several voices read as a slideshow with actors.
+  <b>Three voices, and they do different jobs.</b> A narrator carries the observations; Dana and
+  Marcus speak only their own lines, in quote marks on screen so the viewer knows the difference.
 </p>
-
-<div class="note">
-  <b>The 500-character limit that stopped you last time is per text block, not per project.</b>
-  Each line below is under sixty characters, so you will not come near it. Do not paste the script
-  in as one block &mdash; generate each caption separately, which is what you are doing anyway
-  since each is already its own text element.
-</div>
 
 <table>
-  <tr><th>Shot</th><th>Spoken line</th><th>Length</th></tr>
-  <tr><td><b>1</b></td><td>Everything on this floor was running properly.</td><td>~2.5s in 4s</td></tr>
-  <tr><td><b>2</b></td><td>Every system agreed. Nothing was flagged anywhere.</td><td>~3s in 4s</td></tr>
-  <tr><td><b>3</b></td><td>Then the line stopped for want of a part.</td><td>~2.5s in 4s</td></tr>
-  <tr><td><b>4</b></td><td>Nine of them were already past saving. Opservor said so.</td><td>~3.5s in 5s</td></tr>
-  <tr><td><b>5</b></td><td><i>silent &mdash; music only</i></td><td>3s</td></tr>
+  <tr><th>Who</th><th>Voice to pick</th><th>Lines</th></tr>
+  <tr><td><b>Narrator</b></td><td>Calm, low, unhurried. Documentary, not advertising.</td><td>5</td></tr>
+  <tr><td><b>Dana</b></td><td>Older woman, quiet authority, slightly flat. Never raises it.</td><td>2</td></tr>
+  <tr><td><b>Marcus</b></td><td>Man, warm mid-range, a little worn down. Not corporate.</td><td>2</td></tr>
 </table>
 
-<p class="lede" style="margin-top:1.4rem">
-  Every line fits inside its shot with a beat to spare, so nothing needs re-timing. <b>Leave shot 5
-  silent.</b> A voice reading out your own company name at the end sounds like an advert; music
-  under a still end card sounds like the end of a film.
-</p>
-
-<h3 style="font-family:var(--display);font-size:1.15rem;margin:1.5rem 0 .5rem">Doing it in CapCut</h3>
-<ol class="steps">
-  <li><b>Click a text block on the timeline.</b> <span>The one already holding that shot's caption.</span></li>
-  <li><b>Find "Text to speech".</b> <span>In the text panel on the right, under the font and style
-    options.</span></li>
-  <li><b>Pick a calm narrator voice.</b> <span>Avoid anything labelled energetic, upbeat or
-    advertising. You want the voice of someone stating a fact, not selling. Try the deeper
-    documentary-style options first.</span></li>
-  <li><b>Generate, then repeat for the other three.</b> <span>Same voice every time. Changing voice
-    between lines is the single fastest way to make it sound cheap.</span></li>
-  <li><b>Drop the music to about 20%.</b> <span>Once there are voices, music at its default volume
-    will fight them. The voice leads; the music fills the gaps.</span></li>
-</ol>
+<div class="note">
+  <b>The 500-character limit that stopped you before is per text block, not per project.</b> The
+  longest line here is 62 characters. Generate each caption's speech from its own text block and
+  you will never come near it.
+</div>
 
 <div class="note warn">
-  <b>If the voice rushes the line,</b> add a full stop where you want it to breathe &mdash; "Nine of
-  them were already past saving. Opservor said so." breathes at that full stop. Text-to-speech
-  paces off punctuation, so punctuation is your timing control.
+  <b>Punctuation is your timing control.</b> Text-to-speech paces off full stops. "We had the part
+  on the shelf. The system said so all week." breathes at that full stop; take it out and the line
+  runs together. If a voice rushes, add punctuation rather than re-recording.
 </div>
 
 <p class="lede">
-  <b>If CapCut's voices sound too robotic</b> for you, ElevenLabs' free tier gives noticeably better
-  narration for four short lines and takes about twenty minutes to set up. Worth it only if the
-  CapCut result bothers you &mdash; for a twenty-second clip under music, it usually will not.
+  <b>Put the two spoken lines in quote marks on screen</b> and the narration without. It is a small
+  thing and it does a lot &mdash; the viewer stops wondering who is talking.
 </p>
 
+<!-- ============ CAPCUT ============ -->
+<h2>In CapCut</h2>
+<ol class="steps">
+  <li><b>New project, ratio 1:1.</b> <span>Square. Your images are landscape, so square crops off
+    far less than vertical, and LinkedIn treats them the same.</span></li>
+  <li><b>Import all thirteen clips</b> <span>and lay them out in the order above. Seven are the ones
+    you are about to generate; six you already have. The evening shot is used twice &mdash; once as
+    the closing image and again, darkened, under the end card.</span></li>
+  <li><b>Set the durations</b> <span>from the timecodes on each card. They are not all equal &mdash;
+    the finding gets eight seconds and "Go on." gets four.</span></li>
+  <li><b>Add the movement.</b> <span>Select a clip &rarr; <b>Animation</b> &rarr; <b>Zoom in</b> or
+    <b>Pan</b>. Slow. If you notice the move, it is too fast.</span></li>
+  <li><b>Add the captions</b> <span>&mdash; one text block per shot, lower third, large, held for
+    the whole clip. <b>No word-by-word animation.</b> Quote marks on the spoken lines.</span></li>
+  <li><b>Add the 08:00 and the logo</b> <span>over shot three, top left. Time in a plain monospace
+    font, <code style="color:var(--green)">LOGO-opservor.png</code> directly beneath it at about 8%
+    of the frame width, sharing the same left edge. Fade them in together.</span></li>
+  <li><b>Generate the speech</b> <span>from each text block: <b>Text to speech</b> in the text
+    panel. Narrator voice for the observations, one voice each for Dana and Marcus.</span></li>
+  <li><b>Add music, no lyrics, at about 20%.</b> <span>Search "corporate documentary" or "cinematic
+    tension". It sits under the voices, never against them.</span></li>
+  <li><b>Export 1080&times;1080, 30fps</b> <span>and upload to LinkedIn as a video post.</span></li>
+</ol>
+
+<!-- ============ POST ============ -->
 <h2>The post</h2>
-<p class="lede">
-  Three lines. The video carries the argument; the caption only has to earn the comment.
-</p>
-
 <div class="caption-box">
   <p>Ten items. One supplier. Nine of them already past the point where ordering could save them.</p>
-  <p>Every one had stock on the shelf. Every one was above zero. Nothing anywhere said a word.</p>
+  <p>Every one had stock on the shelf. Every count was right. Nobody was careless and nobody was wrong.</p>
   <p>A stock screen tells you what you have. It does not tell you how long it lasts.</p>
   <p class="q">If you run stock &mdash; has any system you have used ever divided one by the other?</p>
 </div>
 
-<h2>Keeping the cast</h2>
+<!-- ============ CAST ============ -->
+<h2>The cast &middot; make these first</h2>
 <p class="lede">
-  The two characters are worth reusing, because a second film with the same faces reads as a series
-  rather than a one-off. Generate their portrait first, then ask for the new scene in the same chat.
+  Generate each portrait, keep the one you like, then ask for that person's scenes <b>in the same
+  chat</b> using the words "the same Dana from the previous image". That is the whole trick, and
+  skipping it is why characters drift.
 </p>
 
-<details>
-  <summary>Marcus &mdash; distribution centre manager &middot; portrait prompt</summary>
-  <div class="prompt"><pre>Photorealistic portrait, head and shoulders, neutral grey background. Marcus, a Black man in his late thirties, distribution centre manager. Close-cropped hair, short neat beard, alert intelligent expression. Light blue oxford shirt with the sleeves rolled to the elbow, a yellow high-visibility safety vest worn over it, an ID badge on a lanyard. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre></div>
-</details>
+<div class="shot">
+  <header><h3>Dana Whitfield</h3><span class="tag make">needed &mdash; 6 shots</span></header>
+  <p class="onscreen">You have never generated her. Do this one first and take your time over it.</p>
+  <div class="prompt">
+    <div class="label">Portrait prompt</div>
+    <pre>Photorealistic portrait, head and shoulders, neutral grey background. Dana, a woman in her early fifties, senior operations executive. Silver-grey hair worn back off the face, light brown skin, fine lines around the eyes, thin dark rectangular glasses. Charcoal tailored blazer over a crisp white shirt, small silver stud earrings. Composed, serious, not smiling. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+  </div>
+</div>
 
-<details>
-  <summary>Sam &mdash; maintenance technician &middot; portrait prompt</summary>
-  <div class="prompt"><pre>Photorealistic portrait, head and shoulders, neutral grey background. Sam, a Black woman in her early thirties, heavy vehicle maintenance technician. Hair braided back under the hat, focused expression. Navy blue work coveralls with reflective banding, a blue hard hat, clear safety glasses, ear defenders around the neck, work-marked hands. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre></div>
-</details>
-
-<details>
-  <summary>The world &mdash; paste into any new scene prompt</summary>
-  <div class="prompt"><pre>Interior of a large, modern, immaculately kept distribution centre in western Canada. Forty-foot ceilings, white steel roof trusses, bright even LED high-bay lighting, tall racking stacked with shrink-wrapped pallets, polished sealed concrete floor marked with fresh yellow pedestrian walkways, a glass-walled mezzanine office suspended above the floor. Busy but orderly. Cinematic photography, 35mm lens, natural colour grade, soft realistic lighting, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre></div>
-</details>
+<div class="shot">
+  <header><h3>Marcus Bell</h3><span class="tag have">already made</span></header>
+  <p class="onscreen">Reuse the portrait you generated earlier for his one new shot.</p>
+  <code class="file">ChatGPT Image Aug 15, 2026, 06_17_29 PM.png</code>
+</div>
 
 <div class="foot">
   Characters and company are invented. The finding is not &mdash; it is a real Guardian result on

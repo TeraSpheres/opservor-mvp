@@ -171,7 +171,10 @@
   <button onclick="toggle()">Pause</button>
   <button onclick="stage.requestFullscreen()">Full screen</button>
   <button onclick="chrome()">Show / hide progress</button>
-  <span class="read" id="read">0:00 / 2:32</span>
+  <button onclick="slower()">&minus; slower</button>
+  <button onclick="faster()">+ faster</button>
+  <span class="read" id="read">0:00 / 1:38</span>
+  <span class="read" id="paceRead">pace 1.00&times;</span>
 </div>
 
 <p class="note">
@@ -184,7 +187,12 @@
 
 <script>
 /* ---- the film -------------------------------------------------------------
- * dur      seconds, from the generation sheet. Total 2:32.
+ * dur      seconds. Retimed down from the generation sheet's 2:32 to 1:38.
+ *          The sheet's durations were written before anyone had watched it,
+ *          and a still image holds attention for far less time than a moving
+ *          shot of the same length. The morning lost the most, because
+ *          establishing shots are where slowness is cheapest to remove and
+ *          most obvious to feel.
  * file     preferred image, then anything already in the folder.
  * cap      lower third. Spoken lines are quoted, narration is not.
  * motion   how the still moves: in, out, left, right, still.
@@ -198,67 +206,67 @@ const HAVE = {
 };
 
 const SHOTS = [
-  { n:1,  dur:10, title:"The morning",        motion:"in",    fallback:null,
+  { n:1,  dur:6, title:"The morning",        motion:"in",    fallback:null,
     cap:"Tuesday. Everyone was early.",
     todo:"Priya walks the main aisle. Workers nod good morning." },
 
-  { n:2,  dur:5,  title:"08:00 sharp",        motion:"in",    fallback:null, stamp:true,
+  { n:2,  dur:3,  title:"08:00 sharp",        motion:"in",    fallback:null, stamp:true,
     cap:"",
     todo:"Digital clock flips 7:59 to 8:00, then she enters her office." },
 
-  { n:3,  dur:8,  title:"Everything is normal", motion:"in",  fallback:null,
+  { n:3,  dur:5,  title:"Everything is normal", motion:"in",  fallback:null,
     cap:"Every system was green.",
     todo:"Priya sits, opens the laptop, drinks her coffee." },
 
-  { n:4,  dur:9,  title:"Marcus arrives",     motion:"in",    fallback:HAVE.marcusDoor,
+  { n:4,  dur:6,  title:"Marcus arrives",     motion:"in",    fallback:HAVE.marcusDoor,
     cap:"“Got something I can’t make sense of.”",
     todo:"Marcus in the doorway with his tablet." },
 
-  { n:5,  dur:8,  title:"28 / 26 / green",    motion:"in",    fallback:null,
+  { n:5,  dur:6,  title:"28 / 26 / green",    motion:"in",    fallback:null,
     cap:"“Twenty-eight on hand. Reorder at twenty-six.”",
     todo:"Screenshot your Inventory page showing BAK-00484. Real screen, not a mock." },
 
-  { n:6,  dur:8,  title:"Seven a day",        motion:"left",  fallback:null,
+  { n:6,  dur:5,  title:"Seven a day",        motion:"left",  fallback:null,
     cap:"“Six hundred and thirty in ninety days. About seven a day.”",
     todo:"Warehouse floor picking. Scanner, pallet, boxes." },
 
-  { n:7,  dur:7,  title:"Four days",          motion:"in",    fallback:null,
+  { n:7,  dur:5,  title:"Four days",          motion:"in",    fallback:null,
     cap:"“Twenty-eight available. Seven leaving every day. Four days.”",
     todo:"Marcus explains to Priya, medium two-shot." },
 
-  { n:8,  dur:8,  title:"Six days late",      motion:"in",    fallback:null,
+  { n:8,  dur:5,  title:"Six days late",      motion:"in",    fallback:null,
     cap:"“The supplier takes ten. We’d still have six days with nothing.”",
     todo:"Close on Priya as it lands." },
 
-  { n:9,  dur:7,  title:"I ran it through something", motion:"in", fallback:null,
+  { n:9,  dur:5,  title:"I ran it through something", motion:"in", fallback:null,
     cap:"“How did you catch it?” — “I didn’t. Opservor did.”",
     todo:"Marcus opens the app. Over-the-shoulder on the tablet." },
 
-  { n:10, dur:9,  title:"Guardian sees it",   motion:"in",    fallback:null,
+  { n:10,  dur:6,  title:"Guardian sees it",   motion:"in",    fallback:null,
     cap:"",
     todo:"Screenshot the real BAK-00484 finding after running SEED_film01_stock.sql." },
 
-  { n:11, dur:16, title:"Show your work",     motion:"still", fallback:null,
+  { n:11,  dur:10, title:"Show your work",     motion:"still", fallback:null,
     cap:"",
     todo:"Record film01-show-your-work.html, or screenshot its finished state." },
 
-  { n:12, dur:9,  title:"Sam / maintenance",  motion:"right", fallback:HAVE.bay,
+  { n:12,  dur:5,  title:"Sam / maintenance",  motion:"right", fallback:HAVE.bay,
     cap:"“Thursday’s two units are confirmed.”",
     todo:"Sam under the van, checking the schedule." },
 
-  { n:13, dur:10, title:"Calgary Depot",      motion:"in",    fallback:null,
+  { n:13,  dur:7, title:"Calgary Depot",      motion:"in",    fallback:null,
     cap:"",
     todo:"Screenshot the real Calgary Depot finding after running SEED_film01_depot.sql." },
 
-  { n:14, dur:10, title:"Two systems that never speak", motion:"in", fallback:HAVE.floor,
+  { n:14,  dur:6, title:"Two systems that never speak", motion:"in", fallback:HAVE.floor,
     cap:"Neither of them knew about the other.",
     todo:"Maintenance screen and warehouse screen, joined by Guardian." },
 
-  { n:15, dur:18, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
+  { n:15,  dur:11, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
     cap:"",
     todo:"The full Guardian dashboard. Slow push through the finding." },
 
-  { n:16, dur:10, title:"The call",           motion:"out",   fallback:HAVE.evening, end:true,
+  { n:16,  dur:7, title:"The call",           motion:"out",   fallback:HAVE.evening, end:true,
     cap:"“Get TeraSpheres on a call.”",
     todo:"Wide, from behind, looking out over the floor." },
 ];
@@ -280,7 +288,12 @@ const barFill = barEl.firstElementChild;
 const readEl = document.getElementById('read');
 const playEl = document.getElementById('play');
 
-const TOTAL = SHOTS.reduce((t, s) => t + s.dur, 0);
+/* Every duration is multiplied by this. Pacing is a thing you judge by
+ * watching, not by arithmetic, so it is adjustable here rather than being a
+ * number to come back and ask about. */
+let pace = 1;
+const total = () => SHOTS.reduce((t, s) => t + s.dur, 0) * pace;
+
 let timers = [], running = false, elapsed = 0, ticker = null, showChrome = false;
 
 /** Builds one shot's layer. Tries shot-NN.png, then whatever exists, then a note. */
@@ -343,16 +356,17 @@ function start() {
   let at = 0;
   SHOTS.forEach((s, idx) => {
     timers.push(setTimeout(() => show(s, idx), at * 1000));
-    at += s.dur;
+    at += s.dur * pace;
   });
-  timers.push(setTimeout(() => { running = false; clearInterval(ticker); }, TOTAL * 1000));
+  const runtime = total();
+  timers.push(setTimeout(() => { running = false; clearInterval(ticker); }, runtime * 1000));
 
   const t0 = performance.now();
   ticker = setInterval(() => {
     elapsed = (performance.now() - t0) / 1000;
-    const p = Math.min(elapsed / TOTAL, 1);
+    const p = Math.min(elapsed / runtime, 1);
     barFill.style.width = (p * 100) + '%';
-    readEl.textContent = mmss(Math.min(elapsed, TOTAL)) + ' / ' + mmss(TOTAL);
+    readEl.textContent = mmss(Math.min(elapsed, runtime)) + ' / ' + mmss(runtime);
   }, 100);
 }
 
@@ -369,7 +383,7 @@ function show(s, idx) {
     img.style.transition = 'none';
     img.style.transform = from;
     void img.offsetWidth;
-    img.style.transition = `transform ${s.dur}s linear`;
+    img.style.transition = `transform ${s.dur * pace}s linear`;
     img.style.transform = to;
   }
 
@@ -393,8 +407,19 @@ function chrome() {
   barEl.classList.toggle('on', showChrome);
 }
 
+/* Restarts on every change, because a pace applied halfway through would leave
+ * the shots already on screen running at the old speed. */
+function setPace(p) {
+  pace = Math.min(2, Math.max(0.5, Math.round(p * 20) / 20));
+  document.getElementById('paceRead').textContent = 'pace ' + pace.toFixed(2) + '×';
+  readEl.textContent = '0:00 / ' + mmss(total());
+  if (running) start();
+}
+function faster() { setPace(pace - 0.1); }   // less time per shot
+function slower() { setPace(pace + 0.1); }
+
 stage.addEventListener('click', () => { if (!running) start(); });
-readEl.textContent = '0:00 / ' + mmss(TOTAL);
+readEl.textContent = '0:00 / ' + mmss(total());
 </script>
 
 </body>

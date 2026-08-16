@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nobody Was Wrong — production pack</title>
+<style>
+  :root {
+    --ground:#080C14; --panel:#111A26; --card:#141E2C; --line:#233246;
+    --ink:#F2F6FA; --muted:#8FA2B8; --dim:#61748C;
+    --green:#3FD9A0; --amber:#FFA940; --blue:#5EA8FF;
+    --display: Georgia, "Times New Roman", serif;
+    --body: "Segoe UI", -apple-system, system-ui, sans-serif;
+    --data: Consolas, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ground); color: var(--ink);
+    font-family: var(--body); line-height: 1.6;
+    padding: 3rem 1.25rem 6rem;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  .top { border-bottom: 1px solid var(--line); padding-bottom: 2.25rem; margin-bottom: 2.75rem; }
+  .eyebrow {
+    font-family: var(--data); font-size: .72rem; letter-spacing: .28em;
+    color: var(--dim); text-transform: uppercase;
+  }
+  h1 {
+    font-family: var(--display); font-size: clamp(2rem, 5vw, 3.1rem);
+    line-height: 1.1; margin: .7rem 0 .9rem; font-weight: 700;
+  }
+  .sub { color: var(--muted); font-size: 1.05rem; max-width: 46rem; }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 1.6rem; margin-top: 1.6rem;
+    font-family: var(--data); font-size: .78rem; color: var(--dim);
+  }
+  .facts b { color: var(--ink); font-weight: 600; display: block; font-size: .95rem; margin-bottom: .1rem; }
+
+  /* ---------- sections ---------- */
+  h2 {
+    font-family: var(--display); font-size: 1.75rem; font-weight: 700;
+    margin: 3.5rem 0 .5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  .lede { color: var(--muted); margin-bottom: 1.75rem; max-width: 48rem; }
+
+  /* ---------- how-to steps ---------- */
+  ol.steps { list-style: none; counter-reset: s; display: grid; gap: .9rem; }
+  ol.steps li {
+    counter-increment: s; position: relative;
+    background: var(--panel); border: 1px solid var(--line); border-radius: .7rem;
+    padding: 1.05rem 1.2rem 1.05rem 3.6rem;
+  }
+  ol.steps li::before {
+    content: counter(s);
+    position: absolute; left: 1.1rem; top: 1.05rem;
+    font-family: var(--data); font-size: .78rem; font-weight: 700;
+    width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: #1C2A3C; color: var(--green);
+    display: grid; place-items: center;
+  }
+  ol.steps b { color: var(--ink); }
+  ol.steps span { color: var(--muted); }
+
+  /* ---------- cast ---------- */
+  .cast { display: grid; gap: 1rem; }
+  .who {
+    background: var(--panel); border: 1px solid var(--line); border-radius: .8rem;
+    padding: 1.25rem 1.35rem;
+  }
+  .who h3 {
+    font-size: 1.05rem; font-weight: 600; margin-bottom: .1rem;
+    display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
+  }
+  .role { font-family: var(--data); font-size: .7rem; letter-spacing: .16em;
+          text-transform: uppercase; color: var(--green); font-weight: 400; }
+
+  /* ---------- shots ---------- */
+  .shot {
+    background: var(--card); border: 1px solid var(--line); border-radius: .8rem;
+    padding: 1.35rem 1.45rem; margin-bottom: 1rem;
+  }
+  .shot header { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; margin-bottom: .8rem; }
+  .tc {
+    font-family: var(--data); font-size: .8rem; font-weight: 700; color: var(--amber);
+    background: #23180A; border: 1px solid #4A3616; border-radius: .35rem;
+    padding: .12rem .5rem;
+  }
+  .shot header h3 { font-size: 1.02rem; font-weight: 600; }
+  .tag {
+    font-family: var(--data); font-size: .64rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--dim);
+    border: 1px solid var(--line); border-radius: 2rem; padding: .1rem .55rem;
+  }
+  .tag.screen { color: var(--blue); border-color: #274465; }
+
+  .onscreen { color: var(--muted); font-size: .95rem; margin-bottom: .9rem; }
+
+  .line {
+    border-left: 2px solid var(--green); padding: .15rem 0 .15rem .95rem;
+    margin: .9rem 0;
+  }
+  .line .name {
+    font-family: var(--data); font-size: .68rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--green); display: block; margin-bottom: .15rem;
+  }
+  .line p { font-family: var(--display); font-size: 1.12rem; color: var(--ink); }
+
+  /* ---------- copyable prompt boxes ---------- */
+  .prompt { margin-top: .9rem; }
+  .prompt .head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; margin-bottom: .3rem;
+  }
+  .prompt .label {
+    font-family: var(--data); font-size: .64rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--dim);
+  }
+  .prompt pre {
+    font-family: var(--data); font-size: .78rem; line-height: 1.65;
+    color: #C4D3E4; background: #0B121C; border: 1px solid var(--line);
+    border-radius: .5rem; padding: .85rem .95rem;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 15rem; overflow: auto;
+  }
+  button.copy {
+    font-family: var(--data); font-size: .62rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted);
+    background: #16202E; border: 1px solid var(--line); border-radius: 2rem;
+    padding: .3rem .8rem; cursor: pointer; white-space: nowrap;
+  }
+  button.copy:hover { color: var(--ink); border-color: var(--green); }
+  button.copy.done { color: var(--green); border-color: var(--green); }
+
+  /* ---------- notes ---------- */
+  .note {
+    background: #14202B; border: 1px solid #24404F; border-left: 3px solid var(--blue);
+    border-radius: .5rem; padding: .95rem 1.15rem; margin: 1.25rem 0;
+    color: #B9CBDD; font-size: .93rem;
+  }
+  .note.warn { background: #241A0E; border-color: #4A3616; border-left-color: var(--amber); color: #E4CBA8; }
+  .note b { color: var(--ink); }
+
+  .caption-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: .8rem;
+    padding: 1.4rem 1.5rem;
+  }
+  .caption-box p { margin-bottom: .85rem; }
+  .caption-box p:last-child { margin-bottom: 0; }
+  .caption-box .q { font-style: italic; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: .5rem; }
+  th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--data); font-size: .66rem; letter-spacing: .16em;
+       text-transform: uppercase; color: var(--dim); font-weight: 400; }
+  td b { color: var(--ink); }
+  td { color: var(--muted); }
+
+  .foot { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+          color: var(--dim); font-size: .82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="eyebrow">Opservor &middot; production pack</div>
+  <h1>Nobody Was Wrong</h1>
+  <p class="sub">
+    A short film set in a working distribution centre. Two systems are both correct all week,
+    and the week still falls over. Everything below is ready to paste straight into an image
+    generator &mdash; the cast, every shot, every prompt, the voices and the post that goes with it.
+  </p>
+  <div class="facts">
+    <div><b>88 seconds</b>16 shots</div>
+    <div><b>5 characters</b>3 office, 2 floor</div>
+    <div><b>9:16 or 1:1</b>vertical reads best</div>
+    <div><b>~2 hours</b>first full assembly</div>
+  </div>
+</div>
+
+<!-- ================= SHORT CUT ================= -->
+<h2>Build the twenty-second one first</h2>
+<p class="lede">
+  The full film is eighty-eight seconds and takes an afternoon. The short cut takes about forty
+  minutes, uses <b>six</b> of the same shots, and is the version that actually travels &mdash; on
+  LinkedIn, TikTok, Instagram and YouTube alike, the short vertical clip is the one the feed pushes.
+  Nothing here is wasted either way: build the six, cut the short, and if it lands you already own
+  a third of the long film.
+</p>
+
+<div class="note">
+  <b>Different job, same story.</b> The long film is for someone who has already stopped. The short
+  one is for someone who has not. So it drops the conversation entirely and runs on captions
+  &mdash; most people watch with the sound off, and a twenty-second clip has no time to wait for a
+  voice to finish a sentence.
+</div>
+
+<table>
+  <tr><th>Time</th><th>Shot</th><th>Caption on screen</th></tr>
+  <tr>
+    <td><b>0:00&ndash;0:03</b></td>
+    <td>Shot 1 &mdash; the wide floor, working</td>
+    <td><b>Every system said Thursday was fine.</b></td>
+  </tr>
+  <tr>
+    <td><b>0:03&ndash;0:06</b></td>
+    <td>Shot 6 &mdash; the tablet, your dock screen on it</td>
+    <td><b>Docks: on plan.</b></td>
+  </tr>
+  <tr>
+    <td><b>0:06&ndash;0:09</b></td>
+    <td>Shot 7 &mdash; the maintenance bay, two vans up</td>
+    <td><b>Maintenance: on plan.</b></td>
+  </tr>
+  <tr>
+    <td><b>0:09&ndash;0:12</b></td>
+    <td>Shot 4 &mdash; Marcus in the office doorway</td>
+    <td><b>Thursday: three trailers waiting, two doors dark.</b></td>
+  </tr>
+  <tr>
+    <td><b>0:12&ndash;0:17</b></td>
+    <td>Shot 11 &mdash; <span style="color:var(--blue)">your real Opservor screen</span></td>
+    <td><b>Opservor read both. It said so on Monday.</b></td>
+  </tr>
+  <tr>
+    <td><b>0:17&ndash;0:20</b></td>
+    <td>Shot 16 &mdash; evening floor, then end card</td>
+    <td><b>Opservor &middot; by TeraSpheres</b></td>
+  </tr>
+</table>
+
+<p class="lede" style="margin-top:1.5rem">
+  Vertical, 9:16, 1080&times;1920. One caption on screen at a time, large, centred, held for its
+  full three seconds &mdash; no fancy word-by-word animation, it makes short clips unreadable. Music
+  underneath rather than voices: something low and building, no lyrics. Joe&rsquo;s line is the one
+  thing worth keeping as audio if you want a voice in it at all, laid over shot 11.
+</p>
+
+<p class="lede">
+  <b>Post it with three lines, not six.</b> &ldquo;Both systems were right. The week still fell over.
+  How many of your bad days were made of two good numbers?&rdquo; The longer caption further down
+  is for the long film.
+</p>
+
+<!-- ================= HOW ================= -->
+<h2>How this gets made</h2>
+<p class="lede">
+  The hard part of AI video is not the pictures. It is keeping the same five faces across
+  sixteen shots. This pack is built so that problem is solved once, at the start, and never again.
+</p>
+
+<ol class="steps">
+  <li><b>Make the cast first.</b> <span>Generate one clean portrait for each of the five people
+    below, using the portrait prompt on their card. Keep the best one. Save it. These five images
+    are now your cast &mdash; do not regenerate them.</span></li>
+  <li><b>Feed each face back in.</b> <span>Every shot prompt says which characters are in it.
+    Attach that person's saved portrait as a reference image (in most tools this is
+    <i>character reference</i>, <i>image prompt</i> or <i>consistent character</i>). That is what
+    stops Marcus turning into a different man halfway through.</span></li>
+  <li><b>Turn each still into five seconds.</b> <span>Take the still into an image-to-video tool
+    and use the <i>motion</i> line from the same shot card. Short, simple movement. Five seconds
+    per shot, sixteen shots.</span></li>
+  <li><b>Assemble and voice it in CapCut.</b> <span>Drop the clips in order, add the dialogue as
+    captions, add the voices. See the voice section &mdash; there is a fix for the problem you hit
+    last time.</span></li>
+</ol>
+
+<div class="note warn">
+  <b>One decision that saves the whole project:</b> do not try to make the characters'
+  mouths match the words. Lip sync is where these projects die. Shoot the talking wide,
+  over-the-shoulder, or with the speaker turned away, and carry the dialogue in
+  <b>voice-over plus on-screen captions</b>. This is how most corporate film is cut anyway,
+  it looks more expensive, and it removes the one step that never comes out right.
+  Every shot below is already framed for it.
+</div>
+
+<!-- ================= WORLD ================= -->
+<h2>The world</h2>
+<p class="lede">
+  One building, two halves: a glass mezzanine office looking down onto a live warehouse floor.
+  That is what lets the film cut between suits and hard hats without ever leaving the site.
+  This block goes into <b>every</b> shot prompt &mdash; it is already included in each one below,
+  but here it is on its own if you need to rebuild a shot.
+</p>
+
+<div class="prompt">
+  <div class="head"><span class="label">World block</span><button class="copy">Copy</button></div>
+  <pre>Interior of a large, modern, immaculately kept distribution centre in western Canada. Forty-foot ceilings, white steel roof trusses, bright even LED high-bay lighting, tall racking stacked with shrink-wrapped pallets, polished sealed concrete floor marked with fresh yellow pedestrian walkways, a glass-walled mezzanine office suspended above the floor. Busy but orderly. Cinematic photography, 35mm lens, natural colour grade, soft realistic lighting, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+</div>
+
+<!-- ================= CAST ================= -->
+<h2>The cast</h2>
+<p class="lede">
+  Five people. Three run the company, two run the floor &mdash; and the floor gets the best line
+  in the film, which is deliberate.
+</p>
+
+<div class="cast">
+
+  <div class="who">
+    <h3>Dana Whitfield <span class="role">VP of Operations</span></h3>
+    <p class="onscreen">Carries the film. Says almost nothing. The one who has to explain Thursday
+      to someone above her.</p>
+    <div class="prompt">
+      <div class="head"><span class="label">Portrait prompt</span><button class="copy">Copy</button></div>
+      <pre>Photorealistic portrait, head and shoulders, neutral grey background. Dana, a woman in her early fifties, senior operations executive. Silver-grey hair worn back off the face, light brown skin, fine lines around the eyes, thin dark rectangular glasses. Charcoal tailored blazer over a crisp white shirt, small silver stud earrings. Composed, serious, not smiling. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+    </div>
+  </div>
+
+  <div class="who">
+    <h3>Marcus Bell <span class="role">Distribution Centre Manager</span></h3>
+    <p class="onscreen">Between the two worlds &mdash; office shirt, hi-vis vest. Has the numbers and
+      knows they do not help.</p>
+    <div class="prompt">
+      <div class="head"><span class="label">Portrait prompt</span><button class="copy">Copy</button></div>
+      <pre>Photorealistic portrait, head and shoulders, neutral grey background. Marcus, a Black man in his late thirties, distribution centre manager. Close-cropped hair, short neat beard, alert intelligent expression. Light blue oxford shirt with the sleeves rolled to the elbow, a yellow high-visibility safety vest worn over it, an ID badge on a lanyard. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+    </div>
+  </div>
+
+  <div class="who">
+    <h3>Priya Raman <span class="role">Chief Operating Officer</span></h3>
+    <p class="onscreen">Arrives late, speaks twice, ends the film. Unhurried in a way that makes
+      everyone else stand straighter.</p>
+    <div class="prompt">
+      <div class="head"><span class="label">Portrait prompt</span><button class="copy">Copy</button></div>
+      <pre>Photorealistic portrait, head and shoulders, neutral grey background. Priya, a South Asian woman in her mid-forties, chief operating officer. Straight black hair to the shoulder, warm brown skin, minimal makeup, small gold stud earrings. Sharply tailored black suit jacket over a dark grey shell top. Calm, direct, unhurried gaze. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+    </div>
+  </div>
+
+  <div class="who">
+    <h3>Joe Kowalski <span class="role">Warehouse Team Lead</span></h3>
+    <p class="onscreen">Thirty years on the floor. Gets the line that turns the film, because the
+      person who noticed should be the person who does the work.</p>
+    <div class="prompt">
+      <div class="head"><span class="label">Portrait prompt</span><button class="copy">Copy</button></div>
+      <pre>Photorealistic portrait, head and shoulders, neutral grey background. Joe, a white man in his mid-fifties, warehouse team leader. Grey stubble, weathered sun-marked face, deep-set eyes, faint smile lines. Wearing bright orange high-visibility coveralls with reflective silver banding, a white hard hat, clear safety glasses pushed up on the brim, heavy work gloves tucked into a chest pocket. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+    </div>
+  </div>
+
+  <div class="who">
+    <h3>Sam Oyelaran <span class="role">Maintenance Technician</span></h3>
+    <p class="onscreen">One shot, no lines. She is the other half of the problem &mdash; the service
+      slot nobody cross-checked.</p>
+    <div class="prompt">
+      <div class="head"><span class="label">Portrait prompt</span><button class="copy">Copy</button></div>
+      <pre>Photorealistic portrait, head and shoulders, neutral grey background. Sam, a Black woman in her early thirties, heavy vehicle maintenance technician. Hair braided back under the hat, focused expression. Navy blue work coveralls with reflective banding, a blue hard hat, clear safety glasses, ear defenders around the neck, work-marked hands. Soft studio lighting, 85mm lens, shallow depth of field. Photorealistic, no text, no watermark.</pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= SHOTS ================= -->
+<h2>The sixteen shots</h2>
+<p class="lede">
+  Each card has what is on screen, the line that plays over it, the still prompt to generate,
+  and the movement to ask for when you turn that still into five seconds of video.
+</p>
+
+<!-- S1 -->
+<div class="shot">
+  <header><span class="tc">0:00 &ndash; 0:06</span><h3>The building, working</h3><span class="tag">no dialogue</span></header>
+  <p class="onscreen">Wide establishing shot down the length of the floor. Forklifts moving, pallets
+    going up, three people in PPE crossing the yellow walkway. Everything looks right. That is the
+    entire job of this shot.</p>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt</span><button class="copy">Copy</button></div>
+    <pre>Wide establishing interior shot down the length of a large, modern, immaculately kept distribution centre in western Canada. Forty-foot ceilings, white steel roof trusses, bright even LED high-bay lighting, tall racking stacked with shrink-wrapped pallets, polished sealed concrete floor marked with fresh yellow pedestrian walkways, a glass-walled mezzanine office suspended above the floor in the background. A forklift moves through the mid-ground carrying a pallet; three warehouse workers in high-visibility vests and hard hats walk the marked pedestrian lane. Busy but orderly. Cinematic photography, 35mm lens, natural colour grade, soft realistic lighting, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Slow steady dolly forward down the aisle. The forklift continues across frame. Subtle, realistic movement only. Static camera height, no zoom, no shake.</pre>
+  </div>
+</div>
+
+<!-- S2 -->
+<div class="shot">
+  <header><span class="tc">0:06 &ndash; 0:11</span><h3>Joe, on the floor</h3><span class="tag">no dialogue</span></header>
+  <p class="onscreen">Low angle, close to the ground. A forklift passes camera. Joe stands beyond it
+    in orange coveralls and hard hat, checking a rugged tablet, waving the driver through.</p>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses JOE</span><button class="copy">Copy</button></div>
+    <pre>Low angle interior shot on a warehouse floor. In the foreground a forklift passes close to camera, slightly motion-blurred. Beyond it stands Joe, a white man in his mid-fifties with grey stubble and a weathered face, wearing bright orange high-visibility coveralls with reflective silver banding, a white hard hat and clear safety glasses, holding a rugged handheld tablet and raising one gloved hand to wave the driver through. Behind him, tall racking stacked with shrink-wrapped pallets and bright LED high-bay lighting. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>The forklift completes its pass across the foreground, revealing Joe fully. He glances down at the tablet. Minimal, natural movement. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S3 -->
+<div class="shot">
+  <header><span class="tc">0:11 &ndash; 0:17</span><h3>Above it all</h3><span class="tag screen">caption only</span></header>
+  <p class="onscreen">Dana alone in the glass mezzanine office, back to camera, looking down at the
+    floor. On-screen caption, lower third: <b>Thursday. 15:40.</b></p>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses DANA</span><button class="copy">Copy</button></div>
+    <pre>Interior shot from behind and slightly to the side of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt. She stands alone at the floor-to-ceiling glass wall of a modern mezzanine office, arms loosely folded, looking down at a large working distribution centre floor below — racking, pallets, a forklift, workers in high-visibility vests. Late afternoon light. The office behind her is minimal and current: pale oak desk, a single large monitor, a black mesh chair. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field, focus on Dana with the floor softly out of focus beyond the glass. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Very slow push in towards Dana. She shifts her weight slightly and lowers her head. Almost still. No pan, no zoom snap.</pre>
+  </div>
+</div>
+
+<!-- S4 -->
+<div class="shot">
+  <header><span class="tc">0:17 &ndash; 0:23</span><h3>Marcus arrives</h3></header>
+  <p class="onscreen">Marcus comes through the office door with a tablet. Dana does not turn round.
+    Shot from behind Dana, over her shoulder, so his face is to camera and hers is not.</p>
+  <div class="line"><span class="name">Dana</span><p>&ldquo;Three trailers still waiting. Two dock doors dark. What happened Thursday?&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses DANA + MARCUS</span><button class="copy">Copy</button></div>
+    <pre>Interior over-the-shoulder shot inside a modern glass-walled mezzanine office above a distribution centre floor. In the foreground, out of focus and seen from behind, Dana — a woman in her early fifties, silver-grey hair worn back, charcoal tailored blazer — stands facing the glass. In the middle distance, in focus, Marcus stands just inside the doorway: a Black man in his late thirties with close-cropped hair and a short neat beard, wearing a light blue oxford shirt with sleeves rolled to the elbow, a yellow high-visibility safety vest over it and an ID badge on a lanyard, holding a rugged tablet at his side. His expression is tense and resigned. Late afternoon light through the glass. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Marcus steps forward into the room and stops. Dana does not turn. Small, restrained movement. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S5 -->
+<div class="shot">
+  <header><span class="tc">0:23 &ndash; 0:28</span><h3>The answer nobody wants</h3></header>
+  <p class="onscreen">Marcus, medium shot, looking past camera rather than into it.</p>
+  <div class="line"><span class="name">Marcus</span><p>&ldquo;Nothing happened Thursday. That&rsquo;s the problem.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses MARCUS</span><button class="copy">Copy</button></div>
+    <pre>Interior medium shot of Marcus, a Black man in his late thirties with close-cropped hair and a short neat beard, wearing a light blue oxford shirt with sleeves rolled to the elbow, a yellow high-visibility safety vest and an ID badge on a lanyard. He stands in a modern glass-walled mezzanine office, looking slightly off camera to the left, jaw set, tired. Behind him through the glass, the softly out-of-focus warehouse floor with racking and high-bay lighting. Late afternoon light. Cinematic photography, 50mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>He exhales and looks down, then back up. Head turns a few degrees only. Locked-off camera, no zoom.</pre>
+  </div>
+</div>
+
+<!-- S6 -->
+<div class="shot">
+  <header><span class="tc">0:28 &ndash; 0:34</span><h3>The docks were fine</h3><span class="tag screen">real screen</span></header>
+  <p class="onscreen">Top-down on the tablet as he sets it on the table. <b>Use your own Opservor
+    dock utilisation screen here</b> &mdash; screenshot it, overlay it on the tablet in CapCut. Green
+    all week. Keep the DEMO DATA badge visible.</p>
+  <div class="line"><span class="name">Marcus &middot; voice-over</span><p>&ldquo;Docks were inside plan all week. Every single day.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; plate for overlay</span><button class="copy">Copy</button></div>
+    <pre>Overhead top-down interior shot of a pale oak meeting table in a modern mezzanine office. A rugged black handheld tablet lies flat on the table, its screen a plain flat dark blue rectangle with nothing on it. Beside it, a coffee cup and a set of keys. A man's hands in rolled blue shirt sleeves rest at the edge of frame, one finger just lifting from the tablet. Soft even daylight from the left. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks. The tablet screen must be completely blank and unlit.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>The hands withdraw slowly from frame. The tablet stays perfectly still and perfectly flat. No camera movement at all.</pre>
+  </div>
+  <div class="note">
+    Ask for a <b>blank</b> tablet screen and hold the camera dead still &mdash; that is what lets you
+    lay your real screenshot on top in CapCut without it sliding around.
+  </div>
+</div>
+
+<!-- S7 -->
+<div class="shot">
+  <header><span class="tc">0:34 &ndash; 0:39</span><h3>Maintenance was fine too</h3></header>
+  <p class="onscreen">Hard cut to the maintenance bay. Two delivery vans up on lifts. Sam works
+    under one of them. Same building, different department, different system.</p>
+  <div class="line"><span class="name">Marcus &middot; voice-over</span><p>&ldquo;Maintenance was inside plan too.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses SAM</span><button class="copy">Copy</button></div>
+    <pre>Interior wide shot of a clean modern heavy vehicle maintenance bay attached to a distribution centre. Two white delivery vans are raised on hydraulic lifts, bright task lighting beneath them, tools laid out neatly on a red rolling cabinet, epoxy-sealed grey floor. Standing beneath the nearer van is Sam, a Black woman in her early thirties, hair braided back under a blue hard hat, wearing navy blue work coveralls with reflective banding, clear safety glasses and ear defenders around her neck, reaching up to a wheel hub with a tool in her hand. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Slow lateral dolly to the right, revealing the second van on its lift. Sam continues working. Steady, no shake.</pre>
+  </div>
+</div>
+
+<!-- S8 -->
+<div class="shot">
+  <header><span class="tc">0:39 &ndash; 0:45</span><h3>Priya walks in</h3></header>
+  <p class="onscreen">Back in the office. The COO in the doorway, arms at her sides. Wide two-shot so
+    no face fills the frame.</p>
+  <div class="line"><span class="name">Priya</span><p>&ldquo;So both systems were right.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses PRIYA + MARCUS</span><button class="copy">Copy</button></div>
+    <pre>Interior wide two-shot inside a modern glass-walled mezzanine office above a distribution centre floor. Priya, a South Asian woman in her mid-forties with straight black hair to the shoulder wearing a sharply tailored black suit jacket, stands just inside the open doorway on the right of frame, calm and still. On the left, Marcus, a Black man in his late thirties in a light blue oxford shirt with rolled sleeves and a yellow high-visibility vest, stands by the meeting table, turned partly towards her. Minimal current office: pale oak table, black mesh chairs, a large monitor, the warehouse floor visible through the glass behind them. Late afternoon light. Cinematic photography, 28mm lens, natural colour grade. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Priya takes two unhurried steps into the room. Marcus turns his head towards her. Slow, minimal. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S9 -->
+<div class="shot">
+  <header><span class="tc">0:45 &ndash; 0:49</span><h3>The line the film is about</h3></header>
+  <p class="onscreen">Dana, in profile against the glass. Still not facing camera.</p>
+  <div class="line"><span class="name">Dana</span><p>&ldquo;And the day still fell over.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses DANA</span><button class="copy">Copy</button></div>
+    <pre>Interior close profile shot of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt. She stands in profile against a floor-to-ceiling glass wall, lit from the side by late afternoon light, the warehouse floor far below her softly out of focus. Her expression is level and controlled. Cinematic photography, 85mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>She blinks once and her jaw tightens very slightly. Almost a still image. No camera movement.</pre>
+  </div>
+</div>
+
+<!-- S10 -->
+<div class="shot">
+  <header><span class="tc">0:49 &ndash; 0:55</span><h3>Joe says it first</h3></header>
+  <p class="onscreen">Cut to the floor. Joe, tablet in hand, talking to Marcus who has come down to
+    him. The person who noticed is the person doing the work &mdash; keep it that way.</p>
+  <div class="line"><span class="name">Joe</span><p>&ldquo;Opservor flagged this on Monday.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses JOE + MARCUS</span><button class="copy">Copy</button></div>
+    <pre>Interior medium two-shot on a working warehouse floor. On the right, Joe, a white man in his mid-fifties with grey stubble and a weathered face, in bright orange high-visibility coveralls with reflective silver banding, a white hard hat and clear safety glasses, holds a rugged handheld tablet and gestures at it with his free hand as he speaks. Facing him on the left, seen mostly from behind, Marcus in a light blue oxford shirt and yellow high-visibility vest listens. Behind them, tall racking stacked with shrink-wrapped pallets and bright LED high-bay lighting; a forklift is parked in the far background. Cinematic photography, 50mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks. The tablet screen must be completely blank and unlit.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Joe lifts the tablet slightly and taps it once, still talking. Marcus leans in to look. Natural, unhurried. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S11 -->
+<div class="shot">
+  <header><span class="tc">0:55 &ndash; 1:01</span><h3>The finding</h3><span class="tag screen">your real screen</span></header>
+  <p class="onscreen">Full-frame cut to the actual Opservor screen. <b>No AI here &mdash; this is your
+    own product.</b> Screenshot the Guardian capacity finding, DEMO DATA badge left in, and let it
+    hold on screen long enough to read. This is the only moment in the film where the viewer sees
+    what you have actually built.</p>
+  <div class="line"><span class="name">On screen</span><p>Calgary Depot &middot; two vehicles booked for service on the morning dock load hits 94%</p></div>
+  <div class="note">
+    Six seconds is a long hold, and that is on purpose &mdash; it is the shot people screenshot.
+    Zoom in slightly over the six seconds in CapCut so it does not feel like a frozen frame.
+  </div>
+</div>
+
+<!-- S12 -->
+<div class="shot">
+  <header><span class="tc">1:01 &ndash; 1:06</span><h3>Spot on</h3></header>
+  <p class="onscreen">Back to Joe, closer now.</p>
+  <div class="line"><span class="name">Joe</span><p>&ldquo;Said both vans were booked in on our heaviest morning. Spot on, and nobody read it.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses JOE</span><button class="copy">Copy</button></div>
+    <pre>Interior medium close shot of Joe, a white man in his mid-fifties with grey stubble and a weathered, lined face, wearing bright orange high-visibility coveralls with reflective silver banding, a white hard hat and clear safety glasses pushed up on the brim. He stands on a working warehouse floor looking slightly off camera to the right, one eyebrow raised, matter-of-fact rather than angry. Behind him, softly out of focus, tall racking and bright LED high-bay lighting. Cinematic photography, 85mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>He shrugs one shoulder and looks away. Small, dry, human. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S13 -->
+<div class="shot">
+  <header><span class="tc">1:06 &ndash; 1:11</span><h3>What it actually did</h3></header>
+  <p class="onscreen">Marcus, back in the office, tablet in hand, delivering the explanation to Priya
+    and Dana. Shot from behind them, so we see his full body and their shoulders.</p>
+  <div class="line"><span class="name">Marcus</span><p>&ldquo;It read the dock plan and the service schedule. Together. Nothing else we run does that.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses MARCUS + DANA + PRIYA</span><button class="copy">Copy</button></div>
+    <pre>Interior shot inside a modern glass-walled mezzanine office, framed from behind two seated figures in the dark foreground — a woman in a charcoal blazer with silver-grey hair and a woman in a black tailored suit with straight black hair — both seen only as out-of-focus shoulders and heads at the bottom of frame. Beyond them, standing and in sharp focus, Marcus, a Black man in his late thirties with close-cropped hair and a short beard, in a light blue oxford shirt with rolled sleeves and a yellow high-visibility vest, holding a rugged tablet and explaining something, one hand open. Late afternoon light through the glass, the warehouse floor visible far behind him. Cinematic photography, 35mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Marcus brings his two hands together in a small joining gesture as he speaks. The foreground shoulders stay still. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S14 -->
+<div class="shot">
+  <header><span class="tc">1:11 &ndash; 1:15</span><h3>Monday</h3></header>
+  <p class="onscreen">Dana, close. One word. Let the silence run either side of it.</p>
+  <div class="line"><span class="name">Dana</span><p>&ldquo;Monday.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses DANA</span><button class="copy">Copy</button></div>
+    <pre>Interior close shot of Dana, a woman in her early fifties with silver-grey hair worn back and thin dark rectangular glasses, wearing a charcoal tailored blazer over a crisp white shirt, seated at a pale oak meeting table in a modern glass-walled office. She is looking down at the table, not at anyone, absorbing something. Late afternoon light from the side. Cinematic photography, 85mm lens, natural colour grade, shallow depth of field, background softly blurred. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>She raises her eyes slowly to look off camera. Nothing else moves. Very slow, very slight push in.</pre>
+  </div>
+</div>
+
+<!-- S15 -->
+<div class="shot">
+  <header><span class="tc">1:15 &ndash; 1:22</span><h3>The ask</h3></header>
+  <p class="onscreen">Priya, standing, already moving towards the door. The line that names you.</p>
+  <div class="line"><span class="name">Priya</span><p>&ldquo;Get TeraSpheres on a call. If it caught this one, I want to know what else it&rsquo;s watching.&rdquo;</p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt &middot; uses PRIYA</span><button class="copy">Copy</button></div>
+    <pre>Interior medium shot of Priya, a South Asian woman in her mid-forties with straight black hair to the shoulder, wearing a sharply tailored black suit jacket over a dark grey shell top. She stands in a modern glass-walled mezzanine office, half turned towards the door as if about to leave, glancing back over her shoulder to speak. Decisive, unhurried. Behind her, the warehouse floor beyond the glass in soft focus, late afternoon light. Cinematic photography, 50mm lens, natural colour grade, shallow depth of field. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>She turns her head back over her shoulder to speak, then continues towards the door. One clean movement. Locked-off camera.</pre>
+  </div>
+</div>
+
+<!-- S16 -->
+<div class="shot">
+  <header><span class="tc">1:22 &ndash; 1:28</span><h3>End card</h3><span class="tag screen">graphic</span></header>
+  <p class="onscreen">Wide of the floor again, running calmly, evening light through the high
+    windows. Hold three seconds, then fade to the end card.</p>
+  <div class="line"><span class="name">End card</span><p>OPSERVOR<br>Operational intelligence for the people who run the floor<br><span style="font-size:.8rem;color:var(--dim)">TeraSpheres &middot; opservor.com</span></p></div>
+  <div class="prompt">
+    <div class="head"><span class="label">Still prompt</span><button class="copy">Copy</button></div>
+    <pre>Wide interior shot of a large modern distribution centre in the early evening. Warm low sunlight comes through high clerestory windows and falls in long bars across a polished sealed concrete floor marked with yellow pedestrian walkways. Tall racking stacked with shrink-wrapped pallets, a forklift moving slowly in the mid-distance, two workers in high-visibility vests and hard hats walking away from camera down the marked lane. Calm, ordered, end of a long day. Cinematic photography, 28mm lens, warm natural colour grade, soft realistic lighting. Photorealistic. No text, no signage, no logos, no watermarks.</pre>
+  </div>
+  <div class="prompt">
+    <div class="head"><span class="label">Motion</span><button class="copy">Copy</button></div>
+    <pre>Slow steady dolly forward. The two workers continue walking away. Dust drifts in the light beams. Peaceful, no shake.</pre>
+  </div>
+  <div class="note warn">
+    Put one small grey line at the bottom of the end card: <b>Dramatisation. Product screens show
+    demo data.</b> Nobody minds a dramatised scene &mdash; every enterprise vendor makes them &mdash;
+    but the line is what keeps a fictional worker praising your product from ever being read as a
+    real customer quote. It costs you a second and it protects the claim.
+  </div>
+</div>
+
+<!-- ================= VOICE ================= -->
+<h2>The voices</h2>
+<p class="lede">
+  Five speaking lines from four people, none longer than a hundred characters. That is the whole
+  voice job.
+</p>
+
+<div class="note">
+  <b>The 500-character wall you hit last time was per text block, not per project.</b> Generate
+  each line as its own text element and the limit never comes near you &mdash; the longest line in
+  this film is 82 characters. Do not paste the script in as one block.
+</div>
+
+<table>
+  <tr><th>Character</th><th>Voice to pick</th><th>Lines</th></tr>
+  <tr><td><b>Dana</b></td><td>Older woman, low, unhurried, slightly flat. Authority without volume.</td><td>3</td></tr>
+  <tr><td><b>Marcus</b></td><td>Man, warm mid-range, a little worn down. Not corporate.</td><td>4</td></tr>
+  <tr><td><b>Priya</b></td><td>Woman, crisp, measured, no rush at all.</td><td>2</td></tr>
+  <tr><td><b>Joe</b></td><td>Older man, gravelly, plain-spoken. The most human voice in it.</td><td>2</td></tr>
+</table>
+
+<p class="lede" style="margin-top:1.5rem">
+  CapCut's own text-to-speech will do this if the four voices sound different enough from each
+  other. If they do not, ElevenLabs' free tier gives you far more separation and is worth the
+  twenty minutes. Under the dialogue, run one quiet ambient warehouse bed &mdash; distant forklift
+  hum, faint reversing beeper &mdash; at about 15% volume. Silence under AI voices sounds fake;
+  room tone fixes it instantly.
+</p>
+
+<!-- ================= POST ================= -->
+<h2>The post it goes out with</h2>
+<p class="lede">
+  Short, because the film is doing the work. The question at the end is what earns comments,
+  and comments are what LinkedIn actually rewards.
+</p>
+
+<div class="caption-box">
+  <p>A VP, a depot manager and a COO, all looking at systems that were working perfectly.</p>
+  <p>Dock utilisation: inside plan.<br>Maintenance schedule: inside plan.<br>Thursday: three trailers waiting and two doors dark.</p>
+  <p>Nobody was wrong. That is exactly what makes it so hard to catch.</p>
+  <p>The two facts that mattered lived in two different systems, and nothing in that building read both of them at once.</p>
+  <p>That is the thing I have spent this year building.</p>
+  <p class="q">If you run a depot &mdash; how many of your worst days were made of two perfectly good numbers?</p>
+</div>
+
+<div class="foot">
+  Characters and company are invented. The failure is not &mdash; it is the capacity clash Guardian
+  checks for, dramatised. Keep the DEMO DATA badge visible in every product screen you cut in.
+</div>
+
+</div>
+
+<script>
+  /* Each copy button copies the <pre> that follows its own header. Written
+     against the DOM rather than by index, so reordering a shot cannot silently
+     make a button copy the wrong prompt. */
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var box = btn.closest('.prompt');
+      if (!box) return;
+      var pre = box.querySelector('pre');
+      if (!pre) return;
+
+      var done = function () {
+        btn.textContent = 'Copied';
+        btn.classList.add('done');
+        setTimeout(function () {
+          btn.textContent = 'Copy';
+          btn.classList.remove('done');
+        }, 1600);
+      };
+
+      // Opened straight from a folder, the modern clipboard call is sometimes
+      // refused, so the old selection method stands behind it.
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.textContent).then(done, fallback);
+      } else {
+        fallback();
+      }
+
+      function fallback() {
+        var t = document.createElement('textarea');
+        t.value = pre.textContent;
+        t.style.position = 'fixed';
+        t.style.opacity = '0';
+        document.body.appendChild(t);
+        t.select();
+        try { document.execCommand('copy'); done(); } catch (e) { /* nothing to do */ }
+        document.body.removeChild(t);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -55,24 +55,21 @@
     transform-origin: center;
   }
 
-  /* The missing-shot card. Deliberately plain — it is a note to the maker,
-     not a design. */
+  /* The missing-shot card. Quiet on purpose: it should read as a gap in the
+     film, not as a slide competing with the ones either side of it. The number
+     and the filename are the only two things you act on. */
   .todo {
-    position: absolute; inset: 0; background: #0B1220;
+    position: absolute; inset: 0; background: #070B12;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1.4cqw; padding: 6cqw; text-align: center;
-    border: .15cqw dashed #2A3B52;
+    gap: 1.2cqw;
   }
   .todo .n {
-    font-family: var(--data); font-size: 1cqw; letter-spacing: .34em;
-    color: var(--amber); text-transform: uppercase;
+    font-family: var(--data); font-size: 6cqw; font-weight: 700;
+    color: #1E2A3A; line-height: 1;
   }
-  .todo h3 { font-family: var(--display); font-size: 3.2cqw; color: var(--ink); }
-  .todo p { font-size: 1.35cqw; color: var(--muted); max-width: 60%; line-height: 1.6; }
   .todo code {
-    font-family: var(--data); font-size: 1.15cqw; color: var(--green);
-    background: #0B121C; border: 1px solid var(--line); border-radius: .4cqw;
-    padding: .5cqw .9cqw;
+    font-family: var(--data); font-size: 1.1cqw; letter-spacing: .1em;
+    color: #33465C;
   }
 
   /* Lower third. Sits low so it never covers a product screen. */
@@ -173,7 +170,7 @@
   <button onclick="chrome()">Show / hide progress</button>
   <button onclick="slower()">&minus; slower</button>
   <button onclick="faster()">+ faster</button>
-  <span class="read" id="read">0:00 / 1:38</span>
+  <span class="read" id="read">0:00 / 1:26</span>
   <span class="read" id="paceRead">pace 1.00&times;</span>
 </div>
 
@@ -206,7 +203,7 @@ const HAVE = {
 };
 
 const SHOTS = [
-  { n:1,  dur:6, title:"The morning",        motion:"in",    fallback:null,
+  { n:1,  dur:5, title:"The morning",        motion:"in",    fallback:null,
     cap:"Tuesday. Everyone was early.",
     todo:"Priya walks the main aisle. Workers nod good morning." },
 
@@ -218,11 +215,11 @@ const SHOTS = [
     cap:"Every system was green.",
     todo:"Priya sits, opens the laptop, drinks her coffee." },
 
-  { n:4,  dur:6,  title:"Marcus arrives",     motion:"in",    fallback:HAVE.marcusDoor,
+  { n:4,  dur:5,  title:"Marcus arrives",     motion:"in",    fallback:HAVE.marcusDoor,
     cap:"“Got something I can’t make sense of.”",
     todo:"Marcus in the doorway with his tablet." },
 
-  { n:5,  dur:6,  title:"28 / 26 / green",    motion:"in",    fallback:null,
+  { n:5,  dur:5,  title:"28 / 26 / green",    motion:"in",    fallback:null,
     cap:"“Twenty-eight on hand. Reorder at twenty-six.”",
     todo:"Screenshot your Inventory page showing BAK-00484. Real screen, not a mock." },
 
@@ -246,7 +243,7 @@ const SHOTS = [
     cap:"",
     todo:"Screenshot the real BAK-00484 finding after running SEED_film01_stock.sql." },
 
-  { n:11,  dur:10, title:"Show your work",     motion:"still", fallback:null,
+  { n:11,  dur:7, title:"Show your work",     motion:"still", fallback:null,
     cap:"",
     todo:"Record film01-show-your-work.html, or screenshot its finished state." },
 
@@ -254,19 +251,19 @@ const SHOTS = [
     cap:"“Thursday’s two units are confirmed.”",
     todo:"Sam under the van, checking the schedule." },
 
-  { n:13,  dur:7, title:"Calgary Depot",      motion:"in",    fallback:null,
+  { n:13,  dur:6, title:"Calgary Depot",      motion:"in",    fallback:null,
     cap:"",
     todo:"Screenshot the real Calgary Depot finding after running SEED_film01_depot.sql." },
 
-  { n:14,  dur:6, title:"Two systems that never speak", motion:"in", fallback:HAVE.floor,
+  { n:14,  dur:5, title:"Two systems that never speak", motion:"in", fallback:HAVE.floor,
     cap:"Neither of them knew about the other.",
     todo:"Maintenance screen and warehouse screen, joined by Guardian." },
 
-  { n:15,  dur:11, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
+  { n:15,  dur:8, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
     cap:"",
     todo:"The full Guardian dashboard. Slow push through the finding." },
 
-  { n:16,  dur:7, title:"The call",           motion:"out",   fallback:HAVE.evening, end:true,
+  { n:16,  dur:6, title:"The call",           motion:"out",   fallback:HAVE.evening, end:true,
     cap:"“Get TeraSpheres on a call.”",
     todo:"Wide, from behind, looking out over the floor." },
 ];
@@ -323,11 +320,8 @@ function build(s) {
 function todoCard(s) {
   const d = document.createElement('div');
   d.className = 'todo';
-  d.innerHTML =
-    `<div class="n">Shot ${String(s.n).padStart(2, '0')} &middot; ${s.dur}s &middot; not yet made</div>` +
-    `<h3></h3><p></p><code>shot-${String(s.n).padStart(2, '0')}.png</code>`;
-  d.querySelector('h3').textContent = s.title;
-  d.querySelector('p').textContent = s.todo;
+  const nn = String(s.n).padStart(2, '0');
+  d.innerHTML = `<div class="n">${nn}</div><code>shot-${nn}.png</code>`;
   return d;
 }
 

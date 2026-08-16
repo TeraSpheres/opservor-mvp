@@ -242,6 +242,10 @@ export default function GuardianPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  // Kept apart from `unavailable` on purpose. A run that is refused and a run
+  // that finds nothing are different facts, and collapsing them into the same
+  // empty state is what made this impossible to diagnose from the screen.
+  const [runError, setRunError] = useState<string | null>(null);
   const [lastRun, setLastRun] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -282,8 +286,16 @@ export default function GuardianPage() {
 
   async function run() {
     setIsRunning(true);
+    setRunError(null);
     const { error } = await supabase.rpc("guardian_run_all");
-    if (error) setUnavailable(true);
+
+    // load() below always clears `unavailable` when the table reads, so setting
+    // it here would be undone a line later and the failure would vanish. The
+    // run's own outcome is held separately and survives the reload.
+    if (error) {
+      setRunError(error.message || "The database refused the request.");
+    }
+
     await load();
     setIsRunning(false);
   }
@@ -313,6 +325,16 @@ export default function GuardianPage() {
           {isRunning ? "Checking…" : "Run checks"}
         </button>
       </div>
+
+      {runError && (
+        <div className="mb-5 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+          <p className="text-sm text-red-300">The checks did not run.</p>
+          <p className="mt-1 text-xs text-muted">
+            Nothing below is out of date — it simply was not refreshed. The database said:
+          </p>
+          <p className="mt-2 font-mono text-xs text-amber-300 break-words">{runError}</p>
+        </div>
+      )}
 
       {unavailable ? (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">

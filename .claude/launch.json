@@ -4,20 +4,50 @@
     {
       "name": "teraspheres-site",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "serve", "-l", "4321", "C:/opservor-mvp/teraspheres-website"],
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "-l",
+        "4321",
+        "C:/opservor-mvp/teraspheres-website"
+      ],
       "port": 4321
     },
     {
       "name": "opservor-app",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "-p", "3100"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3100"
+      ],
       "port": 3100
     },
     {
       "name": "brand-assets",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "serve", "-l", "4322", "C:/Users/ahsan/Documents/TeraSpheres_Archive/Design_Assets/Logo_Variations"],
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "-l",
+        "4322",
+        "C:/Users/ahsan/Documents/TeraSpheres_Archive/Design_Assets/Logo_Variations"
+      ],
       "port": 4322
+    },
+    {
+      "name": "film-folder",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "serve",
+        "-l",
+        "4323",
+        "C:/Users/ahsan/Documents/TeraSpheres_Archive/Posts/Video"
+      ],
+      "port": 4323
     }
   ]
 }

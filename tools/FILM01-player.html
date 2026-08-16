@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Opservor — Film 01: Four Days</title>
+<style>
+  /* FILM 01 — a player, so the picture edit does not need an editor.
+   *
+   * Every shot is a still. Motion is a slow CSS transform over the shot's own
+   * duration, which is exactly what a cut like this would do in CapCut anyway.
+   * Captions, timing, transitions and the end card all run from the SHOTS list
+   * at the bottom of this file — change a line there and the film changes.
+   *
+   * Missing images do not break it. A shot with no file shows what to generate
+   * and keeps its place in the running time, so the timing is right from the
+   * first play and nothing needs re-cutting as the pictures arrive.
+   *
+   * Silent on purpose. Record this, then lay the voices over the recording —
+   * one video track and some audio is a far smaller job than assembling
+   * sixteen clips by hand.
+   */
+
+  :root {
+    --ink:#FFFFFF; --dim:#5D6E85; --muted:#8496AC; --line:#243449;
+    --green:#3FD9A0; --amber:#FFA940;
+    --display: Georgia, "Times New Roman", serif;
+    --body: "Segoe UI", -apple-system, system-ui, sans-serif;
+    --data: Consolas, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #05070C; min-height: 100vh; font-family: var(--body);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1rem; padding: 1rem;
+  }
+
+  /* Width alone drives the frame; the height follows from the ratio. An
+     explicit height as well would let two caps fight and quietly produce
+     something that is not 16:9. */
+  .stage {
+    width: 1920px; max-width: min(94vw, 138.6vh);
+    aspect-ratio: 16 / 9;
+    background: #000; position: relative; overflow: hidden;
+    container-type: size; cursor: pointer;
+  }
+
+  .shot { position: absolute; inset: 0; opacity: 0; }
+  .shot.on { opacity: 1; }
+  .shot.fading { transition: opacity .45s linear; }
+
+  .shot img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+    transform-origin: center;
+  }
+
+  /* The missing-shot card. Deliberately plain — it is a note to the maker,
+     not a design. */
+  .todo {
+    position: absolute; inset: 0; background: #0B1220;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.4cqw; padding: 6cqw; text-align: center;
+    border: .15cqw dashed #2A3B52;
+  }
+  .todo .n {
+    font-family: var(--data); font-size: 1cqw; letter-spacing: .34em;
+    color: var(--amber); text-transform: uppercase;
+  }
+  .todo h3 { font-family: var(--display); font-size: 3.2cqw; color: var(--ink); }
+  .todo p { font-size: 1.35cqw; color: var(--muted); max-width: 60%; line-height: 1.6; }
+  .todo code {
+    font-family: var(--data); font-size: 1.15cqw; color: var(--green);
+    background: #0B121C; border: 1px solid var(--line); border-radius: .4cqw;
+    padding: .5cqw .9cqw;
+  }
+
+  /* Lower third. Sits low so it never covers a product screen. */
+  .cap {
+    position: absolute; left: 0; right: 0; bottom: 6cqw;
+    display: flex; justify-content: center; padding: 0 8cqw;
+    opacity: 0; transition: opacity .35s ease;
+  }
+  .cap.on { opacity: 1; }
+  .cap span {
+    font-family: var(--display); font-size: 2.3cqw; line-height: 1.35;
+    color: #fff; text-align: center; text-wrap: balance;
+    text-shadow: 0 .25cqw 1.2cqw rgba(0,0,0,.95), 0 0 .5cqw rgba(0,0,0,.9);
+  }
+
+  /* Shot 2's time-and-mark lockup. */
+  .stamp {
+    position: absolute; top: 6cqw; left: 6cqw;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1.1cqw;
+    opacity: 0; transition: opacity .5s ease;
+  }
+  .stamp.on { opacity: 1; }
+  .stamp .t {
+    font-family: var(--data); font-size: 3.4cqw; font-weight: 700; color: #fff;
+    letter-spacing: .06em; text-shadow: 0 .2cqw 1cqw rgba(0,0,0,.9);
+  }
+  .stamp img { width: 7cqw; height: auto; }
+
+  /* End card. */
+  .end {
+    position: absolute; inset: 0; background: rgba(5,7,12,.72);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.6cqw; opacity: 0; transition: opacity .8s ease;
+  }
+  .end.on { opacity: 1; }
+  .end img { width: 11cqw; height: auto; }
+  .end .name {
+    font-family: var(--data); font-size: 3.4cqw; letter-spacing: .42em;
+    color: #fff; padding-left: .42em;
+  }
+  .end .line { font-family: var(--display); font-size: 1.7cqw; color: #C4D3E4; }
+  .end .small { font-family: var(--data); font-size: .95cqw; letter-spacing: .2em; color: var(--dim); }
+  .end .legal { position: absolute; bottom: 3cqw; font-size: .8cqw; color: #46566B; }
+
+  /* Progress. Hidden while playing so a recording stays clean. */
+  .bar { position: absolute; left: 0; bottom: 0; height: .35cqw; width: 100%; background: rgba(255,255,255,.08); opacity: 0; transition: opacity .3s; }
+  .bar.on { opacity: 1; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--green); }
+
+  .big-play {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(5,7,12,.55); transition: opacity .3s;
+  }
+  .big-play.gone { opacity: 0; pointer-events: none; }
+  .big-play div {
+    font-family: var(--data); font-size: 1.1cqw; letter-spacing: .3em;
+    text-transform: uppercase; color: #fff;
+    border: .12cqw solid rgba(255,255,255,.5); border-radius: 4cqw;
+    padding: 1.2cqw 3cqw;
+  }
+
+  .controls { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+  button {
+    font-family: var(--data); font-size: .7rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    background: #101927; border: 1px solid var(--line);
+    border-radius: 2rem; padding: .5rem 1.05rem; cursor: pointer;
+  }
+  button:hover { color: var(--ink); border-color: var(--green); }
+  .read { font-family: var(--data); font-size: .7rem; color: var(--dim); letter-spacing: .1em; }
+  .note { font-size: .76rem; color: #5D6E85; text-align: center; max-width: 54rem; line-height: 1.65; }
+  .note b { color: #8FA2B8; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="cap" id="cap"><span></span></div>
+  <div class="stamp" id="stamp">
+    <div class="t">08:00</div>
+    <img src="LOGO-opservor.png" alt="">
+  </div>
+  <div class="end" id="end">
+    <img src="LOGO-teraspheres.png" alt="">
+    <div class="name">OPSERVOR</div>
+    <div class="line">What is going to happen, and the numbers behind it</div>
+    <div class="small">TERASPHERES &middot; OPSERVOR.COM</div>
+    <div class="legal">Dramatisation. Product screens show demo data.</div>
+  </div>
+  <div class="bar" id="bar"><i></i></div>
+  <div class="big-play" id="play"><div>Press to play</div></div>
+</div>
+
+<div class="controls">
+  <button onclick="start()">Play from the top</button>
+  <button onclick="toggle()">Pause</button>
+  <button onclick="stage.requestFullscreen()">Full screen</button>
+  <button onclick="chrome()">Show / hide progress</button>
+  <span class="read" id="read">0:00 / 2:32</span>
+</div>
+
+<p class="note">
+  <b>To record it:</b> press Full screen, then Win + Shift + S and choose the record option, then
+  press Play. Stop a couple of seconds after the end card settles.
+  <b>Missing shots</b> show a card naming the file to save — drop
+  <code>shot-01.png</code> … <code>shot-16.png</code> into this folder and they appear.
+  Silent by design: record it, then lay the voices over the recording.
+</p>
+
+<script>
+/* ---- the film -------------------------------------------------------------
+ * dur      seconds, from the generation sheet. Total 2:32.
+ * file     preferred image, then anything already in the folder.
+ * cap      lower third. Spoken lines are quoted, narration is not.
+ * motion   how the still moves: in, out, left, right, still.
+ * -------------------------------------------------------------------------*/
+const HAVE = {
+  marcusDoor : "ChatGPT Image Aug 15, 2026, 06_18_09 PM.png",
+  bay        : "ChatGPT Image Aug 15, 2026, 06_18_31 PM.png",
+  floor      : "ChatGPT Image Aug 15, 2026, 06_18_41 PM.png",
+  evening    : "ChatGPT Image Aug 15, 2026, 06_21_23 PM.png",
+  guardian   : "Screenshot 2026-08-15 191859.png",
+};
+
+const SHOTS = [
+  { n:1,  dur:10, title:"The morning",        motion:"in",    fallback:null,
+    cap:"Tuesday. Everyone was early.",
+    todo:"Priya walks the main aisle. Workers nod good morning." },
+
+  { n:2,  dur:5,  title:"08:00 sharp",        motion:"in",    fallback:null, stamp:true,
+    cap:"",
+    todo:"Digital clock flips 7:59 to 8:00, then she enters her office." },
+
+  { n:3,  dur:8,  title:"Everything is normal", motion:"in",  fallback:null,
+    cap:"Every system was green.",
+    todo:"Priya sits, opens the laptop, drinks her coffee." },
+
+  { n:4,  dur:9,  title:"Marcus arrives",     motion:"in",    fallback:HAVE.marcusDoor,
+    cap:"“Got something I can’t make sense of.”",
+    todo:"Marcus in the doorway with his tablet." },
+
+  { n:5,  dur:8,  title:"28 / 26 / green",    motion:"in",    fallback:null,
+    cap:"“Twenty-eight on hand. Reorder at twenty-six.”",
+    todo:"Screenshot your Inventory page showing BAK-00484. Real screen, not a mock." },
+
+  { n:6,  dur:8,  title:"Seven a day",        motion:"left",  fallback:null,
+    cap:"“Six hundred and thirty in ninety days. About seven a day.”",
+    todo:"Warehouse floor picking. Scanner, pallet, boxes." },
+
+  { n:7,  dur:7,  title:"Four days",          motion:"in",    fallback:null,
+    cap:"“Twenty-eight available. Seven leaving every day. Four days.”",
+    todo:"Marcus explains to Priya, medium two-shot." },
+
+  { n:8,  dur:8,  title:"Six days late",      motion:"in",    fallback:null,
+    cap:"“The supplier takes ten. We’d still have six days with nothing.”",
+    todo:"Close on Priya as it lands." },
+
+  { n:9,  dur:7,  title:"I ran it through something", motion:"in", fallback:null,
+    cap:"“How did you catch it?” — “I didn’t. Opservor did.”",
+    todo:"Marcus opens the app. Over-the-shoulder on the tablet." },
+
+  { n:10, dur:9,  title:"Guardian sees it",   motion:"in",    fallback:null,
+    cap:"",
+    todo:"Screenshot the real BAK-00484 finding after running SEED_film01_stock.sql." },
+
+  { n:11, dur:16, title:"Show your work",     motion:"still", fallback:null,
+    cap:"",
+    todo:"Record film01-show-your-work.html, or screenshot its finished state." },
+
+  { n:12, dur:9,  title:"Sam / maintenance",  motion:"right", fallback:HAVE.bay,
+    cap:"“Thursday’s two units are confirmed.”",
+    todo:"Sam under the van, checking the schedule." },
+
+  { n:13, dur:10, title:"Calgary Depot",      motion:"in",    fallback:null,
+    cap:"",
+    todo:"Screenshot the real Calgary Depot finding after running SEED_film01_depot.sql." },
+
+  { n:14, dur:10, title:"Two systems that never speak", motion:"in", fallback:HAVE.floor,
+    cap:"Neither of them knew about the other.",
+    todo:"Maintenance screen and warehouse screen, joined by Guardian." },
+
+  { n:15, dur:18, title:"Guardian — the real screen", motion:"in", fallback:HAVE.guardian,
+    cap:"",
+    todo:"The full Guardian dashboard. Slow push through the finding." },
+
+  { n:16, dur:10, title:"The call",           motion:"out",   fallback:HAVE.evening, end:true,
+    cap:"“Get TeraSpheres on a call.”",
+    todo:"Wide, from behind, looking out over the floor." },
+];
+
+const MOTION = {
+  in:    ["scale(1.00)",              "scale(1.09)"],
+  out:   ["scale(1.09)",              "scale(1.00)"],
+  left:  ["scale(1.08) translateX(2%)",  "scale(1.08) translateX(-2%)"],
+  right: ["scale(1.08) translateX(-2%)", "scale(1.08) translateX(2%)"],
+  still: ["scale(1.00)",              "scale(1.00)"],
+};
+
+const stage = document.getElementById('stage');
+const capEl = document.getElementById('cap');
+const stampEl = document.getElementById('stamp');
+const endEl = document.getElementById('end');
+const barEl = document.getElementById('bar');
+const barFill = barEl.firstElementChild;
+const readEl = document.getElementById('read');
+const playEl = document.getElementById('play');
+
+const TOTAL = SHOTS.reduce((t, s) => t + s.dur, 0);
+let timers = [], running = false, elapsed = 0, ticker = null, showChrome = false;
+
+/** Builds one shot's layer. Tries shot-NN.png, then whatever exists, then a note. */
+function build(s) {
+  const layer = document.createElement('div');
+  layer.className = 'shot';
+
+  const img = document.createElement('img');
+  const candidates = [`shot-${String(s.n).padStart(2, '0')}.png`];
+  if (s.fallback) candidates.push(s.fallback);
+
+  let i = 0;
+  // Each failure moves to the next candidate; running out swaps in the note.
+  img.onerror = () => {
+    i++;
+    if (i < candidates.length) { img.src = candidates[i]; return; }
+    img.remove();
+    layer.appendChild(todoCard(s));
+  };
+  img.src = candidates[0];
+  layer.appendChild(img);
+
+  stage.insertBefore(layer, capEl);
+  return layer;
+}
+
+function todoCard(s) {
+  const d = document.createElement('div');
+  d.className = 'todo';
+  d.innerHTML =
+    `<div class="n">Shot ${String(s.n).padStart(2, '0')} &middot; ${s.dur}s &middot; not yet made</div>` +
+    `<h3></h3><p></p><code>shot-${String(s.n).padStart(2, '0')}.png</code>`;
+  d.querySelector('h3').textContent = s.title;
+  d.querySelector('p').textContent = s.todo;
+  return d;
+}
+
+const layers = SHOTS.map(build);
+
+function clearAll() {
+  timers.forEach(clearTimeout); timers = [];
+  clearInterval(ticker); ticker = null;
+  layers.forEach(l => { l.classList.remove('on', 'fading'); });
+  capEl.classList.remove('on');
+  stampEl.classList.remove('on');
+  endEl.classList.remove('on');
+  barFill.style.width = '0%';
+}
+
+function mmss(t) {
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function start() {
+  clearAll();
+  running = true; elapsed = 0;
+  playEl.classList.add('gone');
+
+  let at = 0;
+  SHOTS.forEach((s, idx) => {
+    timers.push(setTimeout(() => show(s, idx), at * 1000));
+    at += s.dur;
+  });
+  timers.push(setTimeout(() => { running = false; clearInterval(ticker); }, TOTAL * 1000));
+
+  const t0 = performance.now();
+  ticker = setInterval(() => {
+    elapsed = (performance.now() - t0) / 1000;
+    const p = Math.min(elapsed / TOTAL, 1);
+    barFill.style.width = (p * 100) + '%';
+    readEl.textContent = mmss(Math.min(elapsed, TOTAL)) + ' / ' + mmss(TOTAL);
+  }, 100);
+}
+
+function show(s, idx) {
+  layers.forEach((l, i) => {
+    l.classList.add('fading');
+    l.classList.toggle('on', i === idx);
+  });
+
+  const img = layers[idx].querySelector('img');
+  if (img) {
+    const [from, to] = MOTION[s.motion] || MOTION.still;
+    // Reset without a transition, then move across the shot's whole duration.
+    img.style.transition = 'none';
+    img.style.transform = from;
+    void img.offsetWidth;
+    img.style.transition = `transform ${s.dur}s linear`;
+    img.style.transform = to;
+  }
+
+  capEl.classList.toggle('on', !!s.cap);
+  if (s.cap) capEl.firstElementChild.textContent = s.cap;
+
+  stampEl.classList.toggle('on', !!s.stamp);
+  endEl.classList.toggle('on', !!s.end);
+}
+
+function toggle() {
+  // Deliberately a restart rather than a true pause: pausing would need every
+  // timer rescheduled and every transform frozen, and this is a thing you
+  // record in one take.
+  if (running) { clearAll(); running = false; playEl.classList.remove('gone'); }
+  else start();
+}
+
+function chrome() {
+  showChrome = !showChrome;
+  barEl.classList.toggle('on', showChrome);
+}
+
+stage.addEventListener('click', () => { if (!running) start(); });
+readEl.textContent = '0:00 / ' + mmss(TOTAL);
+</script>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
--- FILM 01 — make Guardian actually produce BAK-00484
+-- FILM 01 — make Guardian actually produce SKU-7821
 --
 -- WHY
 --
@@ -22,27 +22,34 @@
 -- Run this, press Run checks, and Guardian will generate:
 --
 --   critical · inventory
---   Supplier 9 — BAK-00484, 4 days of cover
---   Recommended: Raise an order to Supplier 9 for 184 units of BAK-00484.
+--   Supplier 9 — SKU-7821, 4 days of cover
+--   Recommended: Raise an order to Supplier 9 for 184 units of SKU-7821.
 --
 --   Units shipped 630 · Days observed 90 · Leaving per day 7
---   On hand 46 · Reserved 18 · Available 28 · Reorder level 26 · Days to zero 4
+--   On hand 28 · Reorder level 26 · Days to zero 4
 --
 -- Every one of those is computed by the check from the rows below, not typed.
 --
 -- THE ARITHMETIC, WHICH NOW COMES OUT
 --
---   630 shipped / 90 days     = 7.00 a day     (the site said 758, which is 8.42)
---   46 on hand - 18 reserved  = 28 available
---   28 available / 7 a day    = 4 days of cover
---   10-day lead - 4 days      = 6 days with an empty shelf
---   28 available vs reorder 26 -> above the line, so the stock screen says fine
+--   630 shipped / 90 days  = 7.00 a day     (the site said 758, which is 8.42)
+--   28 on hand / 7 a day   = 4 days of cover
+--   10-day lead - 4 days   = 6 days with an empty shelf
+--   28 on hand vs reorder 26 -> above the line, so the stock screen says fine
+--
+-- ON HAND IS 28, NOT 46
+--
+-- The website example splits 46 on hand into 18 reserved and 28 available.
+-- Marcus does not say that. He says "28 on hand. Reorder point is 26", and the
+-- rendered tablet frame says the same, so on hand is 28 and nothing is
+-- reserved. The alternative was an actor saying one number while the screen
+-- behind him showed another, which is exactly the mismatch this file exists to
+-- remove.
 --
 -- NAMING
 --
--- The demo company makes automotive components, so a bakery item would be
--- absurd on screen. BAK is read here as Brake Actuator Kit, which keeps the
--- SKU code the script uses and makes it belong in the building.
+-- SKU-7821, Hydraulic Filter — taken from the rendered frame for shot 05
+-- rather than chosen here. A picture already made outranks a name in a script.
 --
 -- Safe to re-run: it rebuilds this one item's movements from scratch each time.
 
@@ -74,16 +81,16 @@ begin
   end if;
 
   -- The supplier must own exactly one flagged item, or the check groups them
-  -- and the card reads "Supplier 9 — 4 items" instead of naming BAK-00484.
+  -- and the card reads "Supplier 9 — 4 items" instead of naming SKU-7821.
   -- Anything else already using the name is moved aside, and says so.
   update inventory_sku
      set supplier = 'Supplier 9B'
    where company_id = v_company
      and supplier = 'Supplier 9'
-     and sku <> 'BAK-00484';
+     and sku <> 'SKU-7821';
   get diagnostics v_clashed = row_count;
   if v_clashed > 0 then
-    raise notice 'Moved % other item(s) off Supplier 9 so the card names BAK-00484.', v_clashed;
+    raise notice 'Moved % other item(s) off Supplier 9 so the card names SKU-7821.', v_clashed;
   end if;
 
   -- sku is globally unique rather than unique per company, so a conflict is
@@ -94,8 +101,10 @@ begin
     unit_cost, unit_price, warehouse_location, supplier
   )
   values (
-    v_company, 'BAK-00484', 'Brake Actuator Kit 484', 'Braking',
-    46, 18, 26, 184,
+    v_company, 'SKU-7821', 'Hydraulic Filter', 'Filtration',
+    -- on hand, reserved, reorder level, reorder quantity.
+    -- 28 on hand with nothing held, because that is the number said out loud.
+    28, 0, 26, 184,
     42.50, 96.00, 'A-14-3', 'Supplier 9'
   )
   on conflict (sku) do update set
@@ -124,7 +133,7 @@ begin
     current_date - d
   from generate_series(0, 89) as d;
 
-  raise notice 'BAK-00484 seeded for company %. Press Run checks.', v_company;
+  raise notice 'SKU-7821 seeded for company %. Press Run checks.', v_company;
 end $$;
 
 commit;
@@ -150,7 +159,7 @@ join inventory_movement m
   on m.sku_id = s.id
  and m.type = 'outbound'
  and m.date >= current_date - 90
-where s.sku = 'BAK-00484'
+where s.sku = 'SKU-7821'
 group by s.id, s.sku, s.supplier, s.quantity_on_hand, s.quantity_reserved,
          s.reorder_level, s.reorder_quantity;
 --

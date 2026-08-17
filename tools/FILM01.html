@@ -470,7 +470,24 @@ function show(s, idx) {
   if (s.cap) capEl.firstElementChild.textContent = s.cap;
 
   stampEl.classList.toggle('on', !!s.stamp);
-  endEl.classList.toggle('on', !!s.end);
+  /* The end card waits.
+   *
+   * It used to come up the instant the last shot began, and being a near-opaque
+   * full-frame overlay it buried both the photograph and the line the film ends
+   * on — "Get TeraSpheres on a call." Six seconds of title over a picture
+   * nobody ever saw.
+   *
+   * So the shot plays clean for the first half with its caption, and the card
+   * fades up over the second half as the words fade out. Same length, and the
+   * line now lands before the logo does. */
+  endEl.classList.remove('on');
+  if (s.end) {
+    timers.push(setTimeout(function () {
+      endEl.classList.add('on');
+      capEl.classList.remove('on');
+      scrimEl.classList.remove('on');
+    }, s.dur * pace * 500));
+  }
 }
 
 function toggle() {

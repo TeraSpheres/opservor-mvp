@@ -55,6 +55,19 @@ from inventory_sku s, generate_series(0, 89) as d
 where s.sku = 'SKU-7821';
 
 
+-- 5 of 5 — set the level LAST.
+--
+-- Migration 0007 keeps quantity_on_hand in step with the movement ledger by
+-- trigger, so the ninety outbound rows above drove the item from 28 down to
+-- -602. Seeding the level first and the history afterwards can only ever end
+-- that way. The level is therefore set after the ledger, not before it, and
+-- the check ignores anything below zero — which is why the finding never
+-- appeared and the item was being caught by the negative-stock check instead.
+update inventory_sku
+   set quantity_on_hand = 28, quantity_reserved = 0
+ where sku = 'SKU-7821';
+
+
 -- Verify. This one returns a row saying NOT SEEDED rather than nothing at all,
 -- because an empty result reads as success and that is how the first attempt
 -- looked like it had worked when it had not.

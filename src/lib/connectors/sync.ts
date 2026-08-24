@@ -56,11 +56,22 @@ export async function syncVehicles(
     tripsCreated: 0,
     maintenanceSeen: 0,
     maintenanceCreated: 0,
+    itemsSeen: 0,
+    itemsCreated: 0,
+    itemsUpdated: 0,
     warnings: [],
     errors: [],
     startedAt,
     finishedAt: startedAt,
   };
+
+  // A provider with no fleet — an inventory system, say — is not a failure.
+  // It simply has nothing to contribute here, and the sync moves on to the
+  // parts of it that do.
+  if (!connector.fetchVehicles) {
+    summary.finishedAt = new Date().toISOString();
+    return summary;
+  }
 
   // Existing mappings for this connection, fetched once rather than a lookup
   // per vehicle. A thousand vehicles should not mean a thousand round trips.
@@ -526,6 +537,137 @@ export async function syncMaintenance(
       }
 
       summary.maintenanceCreated += ids.length;
+    }
+
+    cursor = page.cursor;
+  } while (cursor);
+}
+
+/**
+ * Stock items from an inventory system.
+ *
+ * The careful part is quantity_on_hand. Migration 0007 keeps it in step with
+ * the movement ledger by trigger, so two things now claim to own that number:
+ * the ledger, and whatever system the operator actually counts stock in.
+ *
+ * The rule applied here:
+ *
+ *   - A new item takes the provider's level. Nothing else is maintaining it.
+ *   - An existing item with no movements recorded takes the provider's level,
+ *     for the same reason.
+ *   - An existing item that has movements keeps the ledger's number. The
+ *     provider's figure is ignored and the difference is reported, because a
+ *     drift between the two is a real operational fact and not a sync problem.
+ *
+ * Writing the level unconditionally is what turned 28 on hand into -602.
+ */
+export async function syncItems(
+  supabase: SupabaseClient,
+  connector: Connector,
+  cfg: ConnectorConfig,
+  companyId: string,
+  connectionId: string,
+  summary: SyncSummary
+): Promise<void> {
+  if (!connector.fetchItems) return;
+
+  // Existing stock for this tenant, keyed by the customer's own code. Matching
+  // on sku rather than on the provider id, because the same item may already
+  // have arrived through a spreadsheet import or been typed in by hand.
+  const { data: existingRows, error: readErr } = await supabase
+    .from("inventory_sku")
+    .select("id, sku, quantity_on_hand")
+    .eq("company_id", companyId);
+
+  if (readErr) {
+    summary.errors.push(`Could not read existing stock: ${readErr.message}`);
+    return;
+  }
+
+  const bySku = new Map(
+    (existingRows ?? []).map((r) => [String(r.sku), { id: String(r.id), onHand: Number(r.quantity_on_hand) }])
+  );
+
+  // Which items already have a ledger. One query rather than one per item.
+  const { data: moved } = await supabase
+    .from("inventory_movement")
+    .select("sku_id")
+    .eq("company_id", companyId);
+
+  const hasLedger = new Set((moved ?? []).map((r) => String(r.sku_id)));
+
+  let cursor: string | undefined;
+  let guard = 0;
+
+  do {
+    if (++guard > 500) {
+      summary.errors.push("Stopped after 500 pages of stock — the provider kept returning a cursor.");
+      break;
+    }
+
+    let page;
+    try {
+      page = await connector.fetchItems(cfg, cursor);
+    } catch (e) {
+      summary.errors.push(e instanceof Error ? e.message : String(e));
+      break;
+    }
+
+    if (page.warnings?.length) summary.warnings.push(...page.warnings);
+
+    for (const item of page.items) {
+      summary.itemsSeen++;
+      const existing = bySku.get(item.sku);
+
+      // Fields the provider is authoritative for in every case.
+      const fields: Record<string, unknown> = {
+        name: item.name,
+        category: item.category ?? null,
+        supplier: item.supplier ?? null,
+      };
+      if (item.reorderLevel != null) fields.reorder_level = item.reorderLevel;
+      if (item.reorderQuantity != null) fields.reorder_quantity = item.reorderQuantity;
+      if (item.unitCost != null) fields.unit_cost = item.unitCost;
+      if (item.unitPrice != null) fields.unit_price = item.unitPrice;
+
+      try {
+        if (existing) {
+          if (hasLedger.has(existing.id)) {
+            // The ledger owns the level. Report the gap rather than closing it.
+            const drift = item.quantityOnHand - existing.onHand;
+            if (Math.abs(drift) > 0) {
+              summary.warnings.push(
+                `${item.sku}: the provider says ${item.quantityOnHand} on hand, Opservor's movements say ${existing.onHand}. The movements were kept.`
+              );
+            }
+          } else {
+            fields.quantity_on_hand = item.quantityOnHand;
+            if (item.quantityReserved != null) fields.quantity_reserved = item.quantityReserved;
+          }
+
+          const { error } = await supabase
+            .from("inventory_sku")
+            .update(fields)
+            .eq("id", existing.id)
+            .eq("company_id", companyId);
+
+          if (error) { summary.errors.push(`${item.sku}: ${error.message}`); continue; }
+          summary.itemsUpdated++;
+        } else {
+          const { error } = await supabase.from("inventory_sku").insert({
+            company_id: companyId,
+            sku: item.sku,
+            ...fields,
+            quantity_on_hand: item.quantityOnHand,
+            quantity_reserved: item.quantityReserved ?? 0,
+          });
+
+          if (error) { summary.errors.push(`${item.sku}: ${error.message}`); continue; }
+          summary.itemsCreated++;
+        }
+      } catch (e) {
+        summary.errors.push(`${item.sku}: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
 
     cursor = page.cursor;

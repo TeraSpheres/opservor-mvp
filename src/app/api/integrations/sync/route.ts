@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
 import { getConnector } from "@/lib/connectors";
-import { syncVehicles, syncTrips, syncMaintenance } from "@/lib/connectors/sync";
+import { syncVehicles, syncTrips, syncMaintenance, syncItems } from "@/lib/connectors/sync";
 
 /* Running a sync.
  *
@@ -106,6 +106,10 @@ export async function POST(request: Request) {
     // four and the whole point of the fourth.
     await syncMaintenance(admin, connector, cfg, companyId, conn.id as string, summary);
 
+    // Stock, where the provider holds any. An inventory system contributes
+    // only this; a telematics system contributes none of it.
+    await syncItems(admin, connector, cfg, companyId, conn.id as string, summary);
+
     const status =
       summary.errors.length ? "partial" :
       summary.warnings.length ? "partial" : "success";
@@ -115,6 +119,9 @@ export async function POST(request: Request) {
       (summary.tripsCreated ? `, ${summary.tripsCreated} trips imported` : "") +
       (summary.maintenanceCreated
         ? `, ${summary.maintenanceCreated} service jobs imported`
+        : "") +
+      (summary.itemsCreated || summary.itemsUpdated
+        ? `, ${summary.itemsCreated} stock items added, ${summary.itemsUpdated} updated`
         : "") +
       (summary.warnings.length ? ` · ${summary.warnings.length} warning(s)` : "");
 
@@ -131,6 +138,9 @@ export async function POST(request: Request) {
       tripsCreated: summary.tripsCreated,
       maintenanceSeen: summary.maintenanceSeen,
       maintenanceCreated: summary.maintenanceCreated,
+      itemsSeen: summary.itemsSeen,
+      itemsCreated: summary.itemsCreated,
+      itemsUpdated: summary.itemsUpdated,
       warnings: summary.warnings.slice(0, 20),
       message,
     });

@@ -97,6 +97,35 @@ export interface CanonicalMaintenance {
   raw?: Record<string, unknown>;
 }
 
+/**
+ * A stock item, as an inventory system holds it.
+ *
+ * On quantities, and this is the part that matters. Opservor keeps
+ * inventory_sku.quantity_on_hand in step with the movement ledger by trigger:
+ * every outbound row moves the level. So an adapter that writes a level
+ * directly is fighting the trigger, and the loser is whichever wrote last.
+ *
+ * The rule the sync applies: a level from a provider is accepted for an item
+ * that has no movements recorded, because then nothing else is maintaining it.
+ * Once movements exist, the ledger owns the number and the provider's figure is
+ * ignored. Writing both is how 28 on hand became -602.
+ */
+export interface CanonicalItem {
+  externalId: string;
+  /** The customer's own code. Unique per company, not globally. */
+  sku: string;
+  name: string;
+  category?: string;
+  quantityOnHand: number;
+  quantityReserved?: number;
+  reorderLevel?: number;
+  reorderQuantity?: number;
+  unitCost?: number;
+  unitPrice?: number;
+  supplier?: string;
+  raw?: Record<string, unknown>;
+}
+
 /** What a connector reports back after a fetch. */
 export interface FetchResult<T> {
   items: T[];
@@ -123,7 +152,16 @@ export interface Connector {
   readonly provider: string;
   /** Cheap call used to check credentials before a full sync. */
   verify(cfg: ConnectorConfig): Promise<{ ok: boolean; message: string }>;
-  fetchVehicles(cfg: ConnectorConfig, cursor?: string): Promise<FetchResult<CanonicalVehicle>>;
+  /**
+   * Optional, and it took a fourth kind of system to notice.
+   *
+   * This was required, which quietly asserted that every system worth
+   * connecting to is a fleet system. Three telematics providers and a
+   * maintenance provider all had vehicles, so the assumption held by accident.
+   * An inventory system has none, and making it return an empty list to satisfy
+   * a signature would be a lie told to a type.
+   */
+  fetchVehicles?(cfg: ConnectorConfig, cursor?: string): Promise<FetchResult<CanonicalVehicle>>;
   /** Optional — not every provider exposes trips. */
   fetchTrips?(
     cfg: ConnectorConfig,
@@ -135,6 +173,11 @@ export interface Connector {
     cfg: ConnectorConfig,
     cursor?: string
   ): Promise<FetchResult<CanonicalMaintenance>>;
+  /** Optional — inventory and ERP systems hold stock; telematics does not. */
+  fetchItems?(
+    cfg: ConnectorConfig,
+    cursor?: string
+  ): Promise<FetchResult<CanonicalItem>>;
 }
 
 /** Outcome of a sync, for the connection record and the screen. */
@@ -147,6 +190,9 @@ export interface SyncSummary {
   tripsCreated: number;
   maintenanceSeen: number;
   maintenanceCreated: number;
+  itemsSeen: number;
+  itemsCreated: number;
+  itemsUpdated: number;
   warnings: string[];
   errors: string[];
   startedAt: string;

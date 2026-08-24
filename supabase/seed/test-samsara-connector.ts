@@ -44,8 +44,15 @@ async function main() {
   let cursor: string | undefined;
   let pages = 0;
 
+  // fetchVehicles became optional when an inventory system was added, since
+  // not every provider has a fleet. Samsara does, so this is a type guard
+  // rather than a real possibility — but asserting it away would hide the day
+  // somebody points this script at a connector that has none.
+  const { fetchVehicles } = samsaraConnector;
+  if (!fetchVehicles) throw new Error("The Samsara connector has no fetchVehicles.");
+
   do {
-    const page = await samsaraConnector.fetchVehicles(good, cursor);
+    const page = await fetchVehicles(good, cursor);
     pages++;
     all.push(...page.items);
     if (page.warnings) warnings.push(...page.warnings);

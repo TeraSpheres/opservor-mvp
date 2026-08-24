@@ -3,6 +3,7 @@ import { samsaraConnector, SAMSARA_BASE_URL } from "./samsara";
 import { motiveConnector, MOTIVE_BASE_URL } from "./motive";
 import { geotabConnector, GEOTAB_BASE_URL } from "./geotab";
 import { fleetioConnector, FLEETIO_BASE_URL } from "./fleetio";
+import { zohoConnector, ZOHO_BASE_URL } from "./zoho";
 
 /* The register of systems Opservor can talk to.
  *
@@ -112,6 +113,29 @@ const REGISTRY: Record<string, RegisteredConnector> = {
         placeholder: "Paste the account token",
         hint: "Sent alongside the API token. Without it Fleetio returns an error that looks like a bad key.",
       },
+    ],
+  },
+  /* The first that brings stock rather than vehicles, and the first a real
+   * operation might already be running — Zoho is cheap and common in the
+   * mid-market. Also the first that could actually be tested against a live
+   * account, because unlike the other four it has a free tier. */
+  zoho: {
+    connector: zohoConnector,
+    label: "Zoho Inventory",
+    defaultBaseUrl: ZOHO_BASE_URL,
+    hint:
+      "Zoho uses a sign-in rather than a key, so it needs four values. Create a " +
+      "Self Client in the Zoho API Console for the first three; the organisation " +
+      "ID is in Zoho Inventory under Settings.",
+    brings: "Stock items and levels, for the shortage checks",
+    untested: true,
+    fields: [
+      { key: "organizationId", label: "Organisation ID", placeholder: "e.g. 10234695",
+        hint: "Zoho Inventory: Settings, then Organisation Profile." },
+      { key: "clientId", label: "Client ID", secret: true },
+      { key: "clientSecret", label: "Client secret", secret: true },
+      { key: "refreshToken", label: "Refresh token", secret: true,
+        hint: "Not the access token — those expire after an hour and the sync would stop working the same day." },
     ],
   },
 };

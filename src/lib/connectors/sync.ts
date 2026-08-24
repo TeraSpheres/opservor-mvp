@@ -25,7 +25,12 @@ import type { CanonicalVehicle, Connector, ConnectorConfig, SyncSummary } from "
  * be skipped on the next run rather than rewritten.
  */
 function fingerprint(v: CanonicalVehicle): string {
-  const stable = [v.name, v.type, v.registration, v.vin, v.make, v.model, v.year, v.fuelType];
+  // depot belongs here. Without it, moving a truck between yards at the
+  // provider leaves the hash unchanged, the row is skipped as "nothing moved",
+  // and the depot never updates — a silent staleness rather than an error.
+  const stable = [
+    v.name, v.type, v.registration, v.vin, v.make, v.model, v.year, v.fuelType, v.depot,
+  ];
   let h = 0;
   const s = stable.join("\0");
   for (let i = 0; i < s.length; i++) {
@@ -111,6 +116,10 @@ export async function syncVehicles(
         license_plate: v.registration ?? null,
       };
       if (v.fuelType) providerOwned.fuel_type = v.fuelType;
+      // Only written when the provider actually said something. A vehicle that
+      // has been assigned a depot by hand must not be blanked by a sync from a
+      // system where nobody set up groups.
+      if (v.depot) providerOwned.depot = v.depot;
 
       try {
         if (existing) {

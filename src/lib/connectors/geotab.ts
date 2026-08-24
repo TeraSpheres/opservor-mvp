@@ -53,8 +53,30 @@ interface GeotabDevice {
   deviceType?: string;
   comment?: string;
   activeTo?: string;
+  /**
+   * Geotab's grouping, and the reason this connector needs a second call.
+   * A device carries group references by id — [{ id: "b27A1" }] — with no
+   * name attached, so the names have to be fetched separately and matched up.
+   */
+  groups?: { id?: string }[];
   [k: string]: unknown;
 }
+
+interface GeotabGroup {
+  id?: string;
+  name?: string;
+  /** Geotab's built-in groups have these; customer groups do not. */
+  reference?: string;
+  [k: string]: unknown;
+}
+
+/* Geotab ships with a fixed set of system groups that every device belongs to.
+ * They describe permissions and hierarchy, never a place, so a device tagged
+ * "Company Group" tells us nothing about which yard it parks in. */
+const SYSTEM_GROUPS = new Set([
+  'GroupCompanyId', 'GroupRootId', 'GroupVehicleId', 'GroupAssetId',
+  'GroupDriverId', 'GroupUserId', 'GroupSecurityId', 'GroupEverythingSecurityId',
+]);
 
 /** Distance on a Geotab Trip is kilometres; everything downstream is miles. */
 const KM_PER_MILE = 1.609344;
@@ -162,7 +184,7 @@ async function authenticate(cfg: ConnectorConfig) {
  * no make, model or fuel type. Those are left empty rather than guessed at —
  * deviceType describes the hardware, not the truck it is bolted to.
  */
-function toCanonical(d: GeotabDevice): CanonicalVehicle | null {
+function toCanonical(d: GeotabDevice, groupNames?: Map<string, string>): CanonicalVehicle | null {
   if (!d.id) return null;
 
   // Geotab marks a device retired by setting activeTo to a past date. The
@@ -173,6 +195,17 @@ function toCanonical(d: GeotabDevice): CanonicalVehicle | null {
     if (!Number.isNaN(until)) status = until < Date.now() ? "inactive" : "active";
   }
 
+  // The first group with a real name wins. System groups were dropped when the
+  // map was built, so anything left is a group somebody at the customer created
+  // — which is where yards and branches live.
+  let depot: string | undefined;
+  if (groupNames) {
+    for (const g of d.groups ?? []) {
+      const name = g.id ? groupNames.get(g.id) : undefined;
+      if (name) { depot = name; break; }
+    }
+  }
+
   return {
     externalId: d.id,
     name: (d.name || "").trim() || `Device ${d.id}`,
@@ -180,8 +213,39 @@ function toCanonical(d: GeotabDevice): CanonicalVehicle | null {
     registration: d.licensePlate || undefined,
     vin: d.vehicleIdentificationNumber || undefined,
     status,
+    depot,
     raw: d as Record<string, unknown>,
   };
+}
+
+/**
+ * Group id to name, with Geotab's built-in groups removed.
+ *
+ * One extra round trip per sync, which is worth it: without the names a device
+ * carries nothing but opaque ids like "b27A1". Failure here is deliberately
+ * quiet — an empty map means vehicles arrive without a depot, exactly as they
+ * did before, rather than the whole sync failing over a nicety.
+ */
+async function fetchGroupNames(
+  host: string,
+  credentials: unknown
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  try {
+    const groups = await rpc<GeotabGroup[]>(host, "Get", {
+      typeName: "Group",
+      credentials,
+      resultsLimit: RESULTS_LIMIT,
+    });
+    for (const g of groups ?? []) {
+      if (!g.id || SYSTEM_GROUPS.has(g.id)) continue;
+      const name = (g.name || "").trim();
+      if (name) names.set(g.id, name);
+    }
+  } catch {
+    /* No groups readable — vehicles simply arrive without a depot. */
+  }
+  return names;
 }
 
 export const geotabConnector: Connector = {
@@ -216,17 +280,20 @@ export const geotabConnector: Connector = {
     if (cursor) return { items: [] };
 
     const { host, credentials } = await authenticate(cfg);
-    const devices = await rpc<GeotabDevice[]>(host, "Get", {
-      typeName: "Device",
-      credentials,
-      resultsLimit: RESULTS_LIMIT,
-    });
+    const [devices, groupNames] = await Promise.all([
+      rpc<GeotabDevice[]>(host, "Get", {
+        typeName: "Device",
+        credentials,
+        resultsLimit: RESULTS_LIMIT,
+      }),
+      fetchGroupNames(host, credentials),
+    ]);
 
     const items: CanonicalVehicle[] = [];
     const warnings: string[] = [];
 
     for (const d of devices ?? []) {
-      const v = toCanonical(d);
+      const v = toCanonical(d, groupNames);
       if (v) items.push(v);
       else warnings.push("A device arrived without an id and was skipped.");
     }

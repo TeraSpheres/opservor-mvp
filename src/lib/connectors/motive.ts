@@ -38,7 +38,25 @@ interface MotiveVehicle {
   license_plate_state?: string;
   fuel_type?: string;
   notes?: string;
+  /**
+   * Motive groups vehicles, and has moved the shape of it between API
+   * versions — sometimes an array of objects, sometimes a single object.
+   * Read defensively rather than pinned to one version, because getting it
+   * wrong costs a depot and never an error.
+   */
+  groups?: { id?: number | string; name?: string }[];
+  group?: { id?: number | string; name?: string };
   [k: string]: unknown;
+}
+
+/** First group with a usable name, whichever shape it arrived in. */
+function depotFromGroups(v: MotiveVehicle): string | undefined {
+  const candidates = [...(v.groups ?? []), ...(v.group ? [v.group] : [])];
+  for (const g of candidates) {
+    const name = (g?.name || "").trim();
+    if (name) return name;
+  }
+  return undefined;
 }
 
 interface MotiveRow {
@@ -116,6 +134,7 @@ function toCanonical(row: MotiveRow): CanonicalVehicle | null {
     model: v.model || undefined,
     year: v.year != null ? String(v.year) : undefined,
     fuelType: v.fuel_type || undefined,
+    depot: depotFromGroups(v),
     status: status(row),
     raw: v as Record<string, unknown>,
   };

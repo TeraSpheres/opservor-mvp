@@ -43,7 +43,26 @@ interface SamsaraVehicle {
   notes?: string;
   serial?: string;
   externalIds?: Record<string, string>;
+  /** How Samsara groups vehicles. A fleet uses these for yards, regions, crews. */
+  tags?: { id?: string; name?: string }[];
   [k: string]: unknown;
+}
+
+/**
+ * Picks the tag most likely to be a depot.
+ *
+ * A vehicle usually carries several tags — "Reefer", "Night shift", "Calgary
+ * Yard" — and only one of them is a place. Rather than guess cleverly, prefer a
+ * tag whose name reads like a location, and otherwise take the first. Getting
+ * this wrong is cheap: the site match downstream simply fails and the vehicle
+ * falls back to having no depot, which is where it was before.
+ */
+function depotFromTags(tags?: { name?: string }[]): string | undefined {
+  const names = (tags ?? []).map((t) => (t.name || "").trim()).filter(Boolean);
+  if (!names.length) return undefined;
+
+  const placeLike = /\b(yard|depot|branch|terminal|site|hub|warehouse|garage|plant|dc)\b/i;
+  return names.find((n) => placeLike.test(n)) ?? names[0];
 }
 
 interface SamsaraPage<T> {
@@ -182,6 +201,7 @@ function toCanonical(v: SamsaraVehicle): CanonicalVehicle {
     make: v.make || undefined,
     model: v.model || undefined,
     year: v.year || undefined,
+    depot: depotFromTags(v.tags),
     // Samsara does not return a lifecycle status on this endpoint. Left unset
     // rather than assumed — the sync will not overwrite a status someone has
     // deliberately changed in Opservor.

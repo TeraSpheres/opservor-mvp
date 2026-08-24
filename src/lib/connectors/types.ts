@@ -36,6 +36,20 @@ export interface CanonicalVehicle {
   /** Odometer in miles, if the provider reports one. */
   odometerMiles?: number;
   status?: "active" | "maintenance" | "inactive" | "retired";
+  /**
+   * Which site this vehicle belongs to, as the provider records it.
+   *
+   * Every telematics system groups vehicles somehow — Samsara has tags, Geotab
+   * has groups, Motive has groups — because that is how a real fleet tracks
+   * which yard a truck lives at. Opservor was ignoring all of it and inferring
+   * the depot by matching a trip's starting address against a warehouse site's
+   * name, exactly. That match almost never succeeds on real data, which is why
+   * the capacity check has never fired outside a seeded demo.
+   *
+   * Taken from the provider verbatim, not normalised. Matching it to a
+   * warehouse site is the sync's problem, not the connector's.
+   */
+  depot?: string;
   /** Anything the provider sent that we have not mapped. Kept for debugging. */
   raw?: Record<string, unknown>;
 }

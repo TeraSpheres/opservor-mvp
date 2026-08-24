@@ -69,6 +69,34 @@ export interface CanonicalTrip {
   raw?: Record<string, unknown>;
 }
 
+/**
+ * A booked or completed piece of service work.
+ *
+ * Worth being clear about what this is not. Telematics systems report driver
+ * inspections and fault codes — a vehicle is defective *now*. That is a
+ * different fact from a vehicle being *booked in* for Thursday, and only the
+ * second one lets the capacity check see a clash coming. Scheduled work lives
+ * in maintenance systems, which is why this shape exists and why the first
+ * connector to fill it is not one of the telematics three.
+ */
+export interface CanonicalMaintenance {
+  externalId: string;
+  vehicleExternalId: string;
+  /** Free text — "Oil change", "Brake inspection". Providers rarely agree. */
+  type: string;
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  /** YYYY-MM-DD. The date the work is due or booked for. */
+  scheduledDate?: string;
+  /** YYYY-MM-DD. Required by the database when status is completed. */
+  completedDate?: string;
+  odometerMiles?: number;
+  cost?: number;
+  vendor?: string;
+  reference?: string;
+  notes?: string;
+  raw?: Record<string, unknown>;
+}
+
 /** What a connector reports back after a fetch. */
 export interface FetchResult<T> {
   items: T[];
@@ -102,6 +130,11 @@ export interface Connector {
     since: string,
     cursor?: string
   ): Promise<FetchResult<CanonicalTrip>>;
+  /** Optional — only maintenance systems have scheduled work. */
+  fetchMaintenance?(
+    cfg: ConnectorConfig,
+    cursor?: string
+  ): Promise<FetchResult<CanonicalMaintenance>>;
 }
 
 /** Outcome of a sync, for the connection record and the screen. */
@@ -112,6 +145,8 @@ export interface SyncSummary {
   vehiclesUpdated: number;
   tripsSeen: number;
   tripsCreated: number;
+  maintenanceSeen: number;
+  maintenanceCreated: number;
   warnings: string[];
   errors: string[];
   startedAt: string;

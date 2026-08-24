@@ -2,6 +2,7 @@ import type { Connector } from "./types";
 import { samsaraConnector, SAMSARA_BASE_URL } from "./samsara";
 import { motiveConnector, MOTIVE_BASE_URL } from "./motive";
 import { geotabConnector, GEOTAB_BASE_URL } from "./geotab";
+import { fleetioConnector, FLEETIO_BASE_URL } from "./fleetio";
 
 /* The register of systems Opservor can talk to.
  *
@@ -83,6 +84,34 @@ const REGISTRY: Record<string, RegisteredConnector> = {
       },
       { key: "username", label: "Username", placeholder: "name@company.com" },
       { key: "password", label: "Password", secret: true },
+    ],
+  },
+
+  /* The odd one out, and deliberately so.
+   *
+   * The other three are telematics: they report where a vehicle is and how it
+   * is behaving. Fleetio is where somebody records that it is booked in for
+   * brakes on Thursday — and a booking is the only thing that lets the
+   * capacity check see a clash before it happens. Telematics can only report a
+   * defect, which is the vehicle already broken. */
+  fleetio: {
+    connector: fleetioConnector,
+    label: "Fleetio",
+    defaultBaseUrl: FLEETIO_BASE_URL,
+    hint:
+      "In Fleetio: Account Settings → API Keys. It needs two values, not one — " +
+      "the API token and the account token, both shown on that page.",
+    brings: "Vehicles, and the service work booked against them",
+    untested: true,
+    fields: [
+      { key: "apiToken", label: "API token", secret: true, placeholder: "Paste the API token" },
+      {
+        key: "accountToken",
+        label: "Account token",
+        secret: true,
+        placeholder: "Paste the account token",
+        hint: "Sent alongside the API token. Without it Fleetio returns an error that looks like a bad key.",
+      },
     ],
   },
 };

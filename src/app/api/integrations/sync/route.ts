@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
 import { getConnector } from "@/lib/connectors";
-import { syncVehicles, syncTrips } from "@/lib/connectors/sync";
+import { syncVehicles, syncTrips, syncMaintenance } from "@/lib/connectors/sync";
 
 /* Running a sync.
  *
@@ -101,6 +101,11 @@ export async function POST(request: Request) {
     const since = new Date(Date.now() - 90 * 86400000).toISOString();
     await syncTrips(admin, connector, cfg, companyId, conn.id as string, since, summary);
 
+    // Service work, where the provider has any. Telematics systems do not —
+    // they report defects, not bookings — so this is a no-op for three of the
+    // four and the whole point of the fourth.
+    await syncMaintenance(admin, connector, cfg, companyId, conn.id as string, summary);
+
     const status =
       summary.errors.length ? "partial" :
       summary.warnings.length ? "partial" : "success";
@@ -108,6 +113,9 @@ export async function POST(request: Request) {
     const message =
       `${summary.vehiclesCreated} vehicles added, ${summary.vehiclesUpdated} updated` +
       (summary.tripsCreated ? `, ${summary.tripsCreated} trips imported` : "") +
+      (summary.maintenanceCreated
+        ? `, ${summary.maintenanceCreated} service jobs imported`
+        : "") +
       (summary.warnings.length ? ` · ${summary.warnings.length} warning(s)` : "");
 
     await note(admin, conn.id as string, status, message);
@@ -121,6 +129,8 @@ export async function POST(request: Request) {
       vehiclesUpdated: summary.vehiclesUpdated,
       tripsSeen: summary.tripsSeen,
       tripsCreated: summary.tripsCreated,
+      maintenanceSeen: summary.maintenanceSeen,
+      maintenanceCreated: summary.maintenanceCreated,
       warnings: summary.warnings.slice(0, 20),
       message,
     });

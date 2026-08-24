@@ -54,6 +54,8 @@ export async function syncVehicles(
     vehiclesUpdated: 0,
     tripsSeen: 0,
     tripsCreated: 0,
+    maintenanceSeen: 0,
+    maintenanceCreated: 0,
     warnings: [],
     errors: [],
     startedAt,
@@ -363,6 +365,167 @@ export async function syncTrips(
       }
 
       summary.tripsCreated += ids.length;
+    }
+
+    cursor = page.cursor;
+  } while (cursor);
+}
+
+/**
+ * Scheduled and completed service work.
+ *
+ * Runs after vehicles, like trips, because a maintenance record is meaningless
+ * without the vehicle it belongs to and the mapping built moments ago is what
+ * resolves one to the other.
+ *
+ * Two rules the database enforces and this has to respect:
+ *
+ *   - A completed job must carry a completion date, and anything not completed
+ *     must carry none. A provider that reports work as done without saying when
+ *     would otherwise fail the whole batch on a constraint.
+ *   - A booking with no date is not a booking. Those are dropped rather than
+ *     imported as something the capacity check would then have to ignore.
+ */
+export async function syncMaintenance(
+  supabase: SupabaseClient,
+  connector: Connector,
+  cfg: ConnectorConfig,
+  companyId: string,
+  connectionId: string,
+  summary: SyncSummary
+): Promise<void> {
+  if (!connector.fetchMaintenance) {
+    // Not a failing. Telematics systems genuinely do not have this.
+    return;
+  }
+
+  const { data: vehicleRefs, error: refError } = await supabase
+    .from("integration_external_ref")
+    .select("external_id, internal_id")
+    .eq("company_id", companyId)
+    .eq("connection_id", connectionId)
+    .eq("entity_type", "vehicle");
+
+  if (refError) {
+    summary.errors.push(`Could not read the vehicle map: ${refError.message}`);
+    return;
+  }
+
+  const vehicleFor = new Map(
+    (vehicleRefs ?? []).map((r) => [String(r.external_id), String(r.internal_id)])
+  );
+
+  if (vehicleFor.size === 0) {
+    summary.warnings.push("No vehicles are mapped yet, so service work was skipped.");
+    return;
+  }
+
+  const { data: existingRefs } = await supabase
+    .from("integration_external_ref")
+    .select("external_id")
+    .eq("company_id", companyId)
+    .eq("connection_id", connectionId)
+    .eq("entity_type", "maintenance");
+
+  const alreadyHave = new Set((existingRefs ?? []).map((r) => String(r.external_id)));
+
+  let cursor: string | undefined;
+  let guard = 0;
+
+  do {
+    if (++guard > 200) {
+      summary.errors.push("Stopped after 200 pages of service work — the provider kept returning a cursor.");
+      break;
+    }
+
+    let page;
+    try {
+      page = await connector.fetchMaintenance(cfg, cursor);
+    } catch (e) {
+      summary.errors.push(e instanceof Error ? e.message : String(e));
+      break;
+    }
+
+    if (page.warnings?.length) summary.warnings.push(...page.warnings);
+
+    const newRows: Record<string, unknown>[] = [];
+    const newRefs: Record<string, unknown>[] = [];
+
+    for (const m of page.items) {
+      summary.maintenanceSeen++;
+      if (alreadyHave.has(m.externalId)) continue;
+
+      const vehicleId = vehicleFor.get(m.vehicleExternalId);
+      if (!vehicleId) {
+        summary.warnings.push(
+          `Service work referenced vehicle ${m.vehicleExternalId}, which is not in the fleet list.`
+        );
+        continue;
+      }
+
+      const completed = m.status === "completed";
+      if (completed && !m.completedDate) {
+        // The constraint would reject this. Reported rather than quietly
+        // downgraded, because "done, date unknown" is a real data problem at
+        // the provider and worth someone seeing.
+        summary.warnings.push(
+          `A completed job on ${m.vehicleExternalId} had no completion date and was skipped.`
+        );
+        continue;
+      }
+      if (!completed && !m.scheduledDate) continue;
+
+      newRows.push({
+        company_id: companyId,
+        vehicle_id: vehicleId,
+        type: m.type,
+        status: m.status,
+        priority: "routine",
+        scheduled_date: m.scheduledDate ?? null,
+        completed_date: completed ? m.completedDate : null,
+        odometer: m.odometerMiles ?? null,
+        cost: m.cost ?? null,
+        vendor: m.vendor ?? null,
+        reference: m.reference ?? null,
+        notes: m.notes ?? null,
+      });
+      newRefs.push({
+        company_id: companyId,
+        connection_id: connectionId,
+        entity_type: "maintenance",
+        external_id: m.externalId,
+      });
+      alreadyHave.add(m.externalId);
+    }
+
+    if (newRows.length) {
+      const { data: inserted, error } = await supabase
+        .from("fleet_maintenance")
+        .insert(newRows)
+        .select("id");
+
+      if (error) {
+        summary.errors.push(`Could not write service work: ${error.message}`);
+        break;
+      }
+
+      const ids = (inserted ?? []).map((r) => String(r.id));
+      const refsWithIds = newRefs
+        .map((ref, i) => (ids[i] ? { ...ref, internal_id: ids[i] } : null))
+        .filter(Boolean) as Record<string, unknown>[];
+
+      if (refsWithIds.length) {
+        const { error: refErr } = await supabase
+          .from("integration_external_ref")
+          .insert(refsWithIds);
+        if (refErr) {
+          summary.warnings.push(
+            `Service work was imported but not all could be recorded as seen: ${refErr.message}`
+          );
+        }
+      }
+
+      summary.maintenanceCreated += ids.length;
     }
 
     cursor = page.cursor;

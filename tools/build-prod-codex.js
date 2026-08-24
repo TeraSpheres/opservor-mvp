@@ -141,6 +141,47 @@ const migFiles = fs.readdirSync(path.join(APP, 'supabase/migrations'))
   // for that reason and nobody noticed, because a short list still looks like
   // a list.
   .filter(f => /^\d{4}_/.test(f)).sort();
+
+/* What each migration is for, in a sentence.
+ *
+ * Version 1.1 listed eight migrations in a hand-written table. There were
+ * twenty-four by the time anyone looked. A typed list of a growing thing is a
+ * promise to keep updating it, and that promise is always broken — so the rows
+ * are generated from the directory and only the wording lives here. A
+ * migration with no note still appears, named after its own filename, which is
+ * wrong in a visible way rather than absent in an invisible one. */
+const MIG_NOTES = {
+  '0001': 'Core: company, app_user, alert, kpi_snapshot, category_score. Helper functions.',
+  '0002': 'Warehouse',
+  '0003': 'Fleet',
+  '0004': 'Inventory',
+  '0005': 'Finance',
+  '0006': 'Workforce',
+  '0007': 'Movement-to-stock trigger, plus historical backfill',
+  '0008': 'Safety and Reports',
+  '0009': 'Tenant scoping across every table; fleet mileage derived from trips',
+  '0010': 'Fleet maintenance: scheduled and completed service work',
+  '0011': 'Per-module totals',
+  '0012': 'Report aggregates',
+  '0013': 'Integration connections and the external identity map',
+  '0014': 'Roles and module access. Owner, manager, staff, viewer.',
+  '0015': 'Guardian findings table and the first check',
+  '0016': 'The capacity clash check — warehouse pressure against vehicles off the road',
+  '0017': 'Findings grouped by supplier rather than one card per item',
+  '0018': 'Single-item wording, so one shortage does not read as a list of one',
+  '0019': 'Closed a read leak: FOR ALL is one rule pretending to be four',
+  '0020': 'Encrypted credential storage, readable only by the service role',
+  '0021': 'Guardian reports what it could not check, instead of implying all-clear',
+  '0022': 'A depot on the vehicle, so the capacity check stops guessing from trip text',
+  '0023': 'Capacity analysis split out of the check',
+  '0024': 'The capacity check rewritten to use the recorded depot',
+};
+
+const MIGRATIONS = migFiles.map((f) => {
+  const num = f.slice(0, 4);
+  const fallback = f.replace(/^\d{4}_/, '').replace(/\.sql$/, '').replace(/_/g, ' ');
+  return [f.replace(/\.sql$/, ''), MIG_NOTES[num] || fallback];
+});
 const allSql = migFiles.map(f => fs.readFileSync(path.join(APP, 'supabase/migrations', f), 'utf8')).join('\n');
 const TABLES = [...new Set([...allSql.matchAll(/create table (?:if not exists )?(?:public\.)?([a-z_]+)/g)].map(m => m[1]))].sort();
 const MODULE_OF = (n) => {
@@ -154,6 +195,7 @@ const MODULE_TABLES = TABLES.filter(x => MODULE_OF(x) !== 'Core');
 
 const TODAY = '9 August 2026';
 const ISSUED_V1 = '26 July 2026';
+const ISSUED_V11 = '16 August 2026';
 const b = [];
 
 /* ---------- cover ---------- */
@@ -172,7 +214,7 @@ b.push(
   img('brand/opservor-plate-512.png', 150, 150, AlignmentType.CENTER),
   new Paragraph({ children: [t('')], spacing: { after: 800 } }),
   new Paragraph({ children: [t('Volume 3 of the TeraSpheres Codex', { size: 19, color: SOFT })], spacing: { after: 60 } }),
-  new Paragraph({ children: [t(`Version 1.1  ·  ${TODAY}`, { size: 19, color: SOFT })] }),
+  new Paragraph({ children: [t(`Version 1.2  ·  ${TODAY}`, { size: 19, color: SOFT })] }),
 );
 
 /* ---------- control ---------- */
@@ -298,8 +340,33 @@ b.push(
     + 'finding table carries an array of modules rather than a single value.'),
   P('Every finding states what it assumed. Supplier lead time is recorded nowhere, so ten '
     + 'days is used and the finding says so on screen. Which vehicles serve which site is '
-    + 'not recorded either, so it is inferred from where trips began, and the finding says '
-    + 'that too.'),
+    + 'now recorded on the vehicle, and each finding reports which of the two sources it '
+    + 'actually used.'),
+
+  H3('Silence was the defect'),
+  P('Three faults were found and fixed after version 1.1, and they were the same fault '
+    + 'wearing different clothes: the product reporting nothing when it should have '
+    + 'reported that it could not tell.'),
+  BUL('A refused run drew "Nothing to flag". The screen set an unavailable flag on '
+    + 'failure and the reload immediately cleared it, because the table itself reads '
+    + 'perfectly well — so a database that refused the checks and a depot with genuinely '
+    + 'nothing wrong produced an identical screen.'),
+  BUL('A check that could not identify the caller’s company returned zero. Zero means '
+    + '"I looked and found nothing wrong"; a check that cannot resolve a tenant did not '
+    + 'look. A sign-in with no user record was told, repeatedly and confidently, that a '
+    + 'company it could not see was fine.'),
+  BUL('The capacity check worked out which vehicles served which site by matching a '
+    + 'trip’s starting point against a site’s name, exactly. Real trip origins are street '
+    + 'addresses and geofence labels, so that match almost never succeeds — and when it '
+    + 'fails, no site has a fleet and the check returns zero without a word. It had never '
+    + 'fired on anything but seeded data.'),
+  P('The first two are fixed on the screen and in a readiness function that reports what '
+    + 'could not be checked and why. The third is fixed by recording the depot on the '
+    + 'vehicle, taken from the provider’s own grouping, with the old inference kept as a '
+    + 'fallback so an account without groups is no worse off than before.'),
+  P('The rule this encodes, and the one worth carrying into everything built next: a tool '
+    + 'whose entire job is to say what is wrong must never go quiet when the broken thing '
+    + 'is the tool.'),
 
   H3('What still does not exist'),
   P('There is no model, no inference, no training signal, no forecasting and no '
@@ -549,19 +616,12 @@ b.push(
   H1('9  Schema change discipline'),
 
   H2('9.1  Numbered migrations'),
-  P('Eight numbered migrations define the schema. They are applied in order and never ' +
-    'edited after the fact.'),
+  P(`${MIGRATIONS.length} numbered migrations define the schema. They are applied in ` +
+    'order and never edited after the fact. The table below is generated from the ' +
+    'directory rather than typed, because the typed version said eight for as long as ' +
+    'nobody counted.'),
   SPACER(120),
-  tbl(['Migration', 'Adds'], [
-    ['0001_init', 'Core: company, app_user, alert, kpi_snapshot, category_score. Helper functions.'],
-    ['0002_add_warehouse_module', 'Warehouse'],
-    ['0003_add_fleet_module', 'Fleet'],
-    ['0004_add_inventory_module', 'Inventory'],
-    ['0005_add_finance_module', 'Finance'],
-    ['0006_add_hr_module', 'Workforce'],
-    ['0007_inventory_stock_sync', 'Movement-to-stock trigger, plus historical backfill'],
-    ['0008_add_safety_and_reports', 'Safety and Reports'],
-  ], [3200, 6448], { monoCols: [0] }),
+  tbl(['Migration', 'Adds'], MIGRATIONS, [3400, 6248], { monoCols: [0] }),
   SPACER(280),
 
   H2('9.2  Guarded and re-runnable'),
@@ -690,11 +750,29 @@ b.push(
   BUL('Onboarding that creates a tenant without manual SQL.'),
   BUL('An interface for the two orphaned workforce tables.'),
 
-  H2('11.3  To integrate with anything'),
-  P('No connector of any kind exists — no ERP, no TMS, no WMS, no telematics, no webhook, ' +
-    'no import. Every row in the system was typed into it. This is the largest single gap ' +
-    'between the product as described and the product as built, and it is a substantial ' +
-    'body of work rather than a feature.'),
+  H2('11.3  Integrations'),
+  P('Version 1.1 said no connector of any kind existed and that every row had been typed '
+    + 'in. That is no longer true, and the correction matters in both directions.'),
+  BUL('Four adapters are written: Samsara, Motive and Geotab for telematics, and Fleetio '
+    + 'for maintenance. Each translates its own system into one shared shape, so nothing '
+    + 'downstream — not the sync, not the database, not Guardian — knows where a vehicle '
+    + 'came from.'),
+  BUL('A CSV import exists, with its own parser, for operations that have data but no API '
+    + 'worth calling.'),
+  BUL('Credentials are encrypted at rest and readable only by the service role. The '
+    + 'browser role cannot read the credential table at all: row-level security is enabled '
+    + 'on it with no policy, deliberately.'),
+  P('What that does not mean. None of the four has been run against a live account, and '
+    + 'the connections screen says so on each of them rather than leaving it to be '
+    + 'discovered. There is still no ERP, no WMS and no TMS connector, and nothing runs on '
+    + 'a schedule — a sync happens when somebody presses a button.'),
+  P('One finding from building them is worth recording, because it looks like an obvious '
+    + 'thing to try and is a dead end. Telematics systems cannot supply scheduled '
+    + 'maintenance. Samsara exposes driver inspections, Motive exposes inspections, Geotab '
+    + 'has no maintenance entity at all — every one of those reports a vehicle being '
+    + 'defective now, which is a different fact from a vehicle being booked in for '
+    + 'Thursday. Only the second can be seen coming, and it lives in a maintenance system. '
+    + 'That is why the fourth adapter is not a fourth telematics box.'),
 );
 
 /* ---------- 12 ---------- */
@@ -732,15 +810,21 @@ b.push(
   tbl(['Version', 'Date', 'Change'], [
     ['1.0', ISSUED_V1, 'First issue. Records the seven-module v1, the tenancy model, six '
       + 'known defects, and the gap between the website capability claims and the build.'],
-    ['1.1', TODAY, 'Guardian moved from nothing built to three checks running, with what '
+    ['1.1', ISSUED_V11, 'Guardian moved from nothing built to three checks running, with what '
       + 'still does not exist stated as plainly as what does. Roles, per-module permissions '
       + 'and spreadsheet import added as section 10. Three defects closed, two opened. '
       + 'Rewritten because thirty commits had landed and the document had begun to '
       + 'understate the product, which is the same failure as overstating it.'],
+    ['1.2', TODAY, 'Integrations corrected: version 1.1 said no connector existed and '
+      + 'four now do, plus a CSV import — understating the product is the same failure '
+      + 'as overstating it. Three silence defects recorded and closed, where the product '
+      + 'reported nothing rather than reporting that it could not tell. The depot moved '
+      + 'from inferred to recorded. The migration table is now generated from the '
+      + 'directory, having claimed eight when there were twenty-four.'],
   ], [1300, 1800, 6548]),
   SPACER(400),
   RULE_P(),
-  new Paragraph({ children: [t('TS-PROD-001 · Product Architecture · Version 1.1', { size: 18, color: SOFT })] }),
+  new Paragraph({ children: [t('TS-PROD-001 · Product Architecture · Version 1.2', { size: 18, color: SOFT })] }),
   new Paragraph({ children: [t('Ahsan Ahmad, Founder · founder@teraspheres.com', { size: 18, color: SOFT })] }),
 );
 
@@ -785,7 +869,7 @@ const doc = new Document({
       default: new Footer({ children: [new Paragraph({
         alignment: AlignmentType.RIGHT,
         children: [
-          t('Version 1.1', { size: 16, color: SOFT }),
+          t('Version 1.2', { size: 16, color: SOFT }),
           new TextRun({ children: ['\t'], font: FONT }),
           t('Page ', { size: 16, color: SOFT }),
           new TextRun({ children: [PageNumber.CURRENT], size: 16, color: SOFT, font: FONT }),
@@ -797,7 +881,7 @@ const doc = new Document({
   }],
 });
 
-const outFile = path.join(OUT, 'TS-PROD-001_Product_Architecture_v1.1.docx');
+const outFile = path.join(OUT, 'TS-PROD-001_Product_Architecture_v1.2.docx');
 Packer.toBuffer(doc).then(buf => {
   fs.writeFileSync(outFile, buf);
   console.log(outFile);

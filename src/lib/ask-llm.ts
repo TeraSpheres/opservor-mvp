@@ -21,12 +21,33 @@ import "server-only";
  * falls back to the pattern matcher, which is narrow but never wrong.
  */
 
-const MODEL = "claude-sonnet-4-5";
 const MAX_TOKENS = 700;
 const TIMEOUT_MS = 20_000;
 
+const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+
+/* Gemini renames its models often and retires the old names, so this is
+ * settable without a deploy. When a call starts failing for no apparent
+ * reason, a retired model name is the first thing to check. */
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+/**
+ * Whichever is configured, Anthropic first.
+ *
+ * Both are optional. With neither, the caller falls back to the pattern
+ * matcher — narrow, but incapable of being wrong, which is the property this
+ * product cares about most.
+ */
+type Provider = "anthropic" | "gemini" | null;
+
+function provider(): Provider {
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (process.env.GEMINI_API_KEY) return "gemini";
+  return null;
+}
+
 export function llmAvailable(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+  return provider() !== null;
 }
 
 const SYSTEM = `You are Opservor, an operations assistant for a logistics and warehousing business.
@@ -124,48 +145,19 @@ export async function askWithLlm(
   question: string,
   ctx: AskContext
 ): Promise<string | null> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
+  const which = provider();
+  if (!which) return null;
+
+  const prompt =
+    `Here is the current operational data.\n\n${renderContext(ctx)}\n\n---\n\nQuestion: ${question}`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM,
-        messages: [
-          {
-            role: "user",
-            content: `Here is the current operational data.\n\n${renderContext(ctx)}\n\n---\n\nQuestion: ${question}`,
-          },
-        ],
-      }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
-    const body = (await res.json()) as {
-      content?: { type: string; text?: string }[];
-    };
-
-    const text = (body.content ?? [])
-      .filter((c) => c.type === "text")
-      .map((c) => c.text ?? "")
-      .join("")
-      .trim();
-
-    return text || null;
+    return which === "anthropic"
+      ? await callAnthropic(prompt, controller.signal)
+      : await callGemini(prompt, controller.signal);
   } catch {
     // Timeout, network, malformed reply — all the same to the caller, which
     // has a narrower answer it can give instead.
@@ -173,4 +165,83 @@ export async function askWithLlm(
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function callAnthropic(prompt: string, signal: AbortSignal): Promise<string | null> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY as string,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM,
+      messages: [{ role: "user", content: prompt }],
+    }),
+    signal,
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+
+  const body = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const text = (body.content ?? [])
+    .filter((c) => c.type === "text")
+    .map((c) => c.text ?? "")
+    .join("")
+    .trim();
+
+  return text || null;
+}
+
+/**
+ * Gemini, which has a free tier and so is the one most likely in use here.
+ *
+ * Two differences worth knowing. The system prompt goes in its own field
+ * rather than alongside the messages, and a refusal comes back as HTTP 200
+ * with no candidates and a blockReason — so an empty answer has to be treated
+ * as a failure rather than as an empty answer.
+ */
+async function callGemini(prompt: string, signal: AbortSignal): Promise<string | null> {
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-goog-api-key": process.env.GEMINI_API_KEY as string,
+    },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: MAX_TOKENS,
+        // Low, deliberately. This answers from figures, and there is nothing
+        // to be gained from it being inventive about them.
+        temperature: 0.2,
+      },
+    }),
+    signal,
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+
+  const body = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    promptFeedback?: { blockReason?: string };
+  };
+
+  if (body.promptFeedback?.blockReason) return null;
+
+  const text = (body.candidates?.[0]?.content?.parts ?? [])
+    .map((p) => p.text ?? "")
+    .join("")
+    .trim();
+
+  return text || null;
 }

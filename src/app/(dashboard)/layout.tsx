@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
+import AskOpservorChat from "@/components/AskOpservorChat";
 
 /* This layout renders which tenant you are signed in to, so it must never be
  * served from a cache. Next.js will happily reuse a rendered layout, and a
@@ -57,6 +58,9 @@ export default async function DashboardGroupLayout({
         companyName={companyName}
       />
       <main className="flex-1 min-h-screen bg-surface">{children}</main>
+      {/* On every screen, because the question usually arrives while you are
+          looking at something else. */}
+      <AskOpservorChat />
     </div>
   );
 }

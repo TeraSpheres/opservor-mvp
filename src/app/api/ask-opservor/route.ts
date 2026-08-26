@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { askOpservor } from "@/lib/ask-opservor";
-import { askWithLlm, llmAvailable, type AskContext } from "@/lib/ask-llm";
+import { askWithLlm, llmAvailable, lastLlmFailure, type AskContext } from "@/lib/ask-llm";
 import type { Alert, CategoryScore, KpiSnapshot } from "@/lib/types";
 
 /* Ask Opservor.
@@ -83,6 +83,8 @@ export async function POST(request: Request) {
   const latestCategoryScores = allScores.filter((s) => s.date === latestDate);
   const openAlerts = (alertRows ?? []) as Alert[];
 
+  let llmFailed = false;
+
   if (llmAvailable()) {
     const ctx: AskContext = {
       companyName: (company?.name as string) ?? undefined,
@@ -107,8 +109,15 @@ export async function POST(request: Request) {
 
     const answer = await askWithLlm(question, ctx);
     if (answer) return NextResponse.json({ answer, source: "llm" });
-    // Fell through: no key, a timeout, or the provider refused. The narrow
-    // answer is better than an apology.
+
+    // Fell through: a timeout, a retired model name, a rejected key. The
+    // narrow answer is still better than an apology — but falling back
+    // silently is how you end up unable to tell a working fallback from a
+    // broken provider, which is the exact fault this product exists to
+    // report. So it goes in the server log, where the reason can name the
+    // provider without ever reaching the browser.
+    console.error("[ask-opservor] LLM unavailable, using patterns:", lastLlmFailure());
+    llmFailed = true;
   }
 
   const answer = askOpservor(question, {
@@ -117,5 +126,10 @@ export async function POST(request: Request) {
     openAlerts,
   });
 
-  return NextResponse.json({ answer, source: "patterns" });
+  // "configured but failed" and "never configured" look identical from the
+  // outside and need different fixes, so they are distinguished here.
+  return NextResponse.json({
+    answer,
+    source: llmFailed ? "patterns-after-failure" : "patterns",
+  });
 }

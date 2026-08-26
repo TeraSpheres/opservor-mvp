@@ -26,10 +26,26 @@ const TIMEOUT_MS = 20_000;
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
-/* Gemini renames its models often and retires the old names, so this is
- * settable without a deploy. When a call starts failing for no apparent
- * reason, a retired model name is the first thing to check. */
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+/* Gemini renames and retires models on its own schedule, and a retired name
+ * returns 404 — which, with a silent fallback, looks exactly like "the key is
+ * wrong". Rather than pin one name and hope, try several and use the first
+ * that answers. An explicit GEMINI_MODEL still wins, for when a specific one
+ * is wanted or a new name appears before this list is updated. */
+const GEMINI_MODELS = process.env.GEMINI_MODEL
+  ? [process.env.GEMINI_MODEL]
+  : [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-flash-latest",
+      "gemini-1.5-flash",
+    ];
+
+/* Why the last attempt failed, for the server log. Never returned to the
+ * browser — a provider's error text can echo the key back. */
+let lastFailure = "";
+export function lastLlmFailure(): string {
+  return lastFailure;
+}
 
 /**
  * Whichever is configured, Anthropic first.
@@ -206,42 +222,73 @@ async function callAnthropic(prompt: string, signal: AbortSignal): Promise<strin
  * as a failure rather than as an empty answer.
  */
 async function callGemini(prompt: string, signal: AbortSignal): Promise<string | null> {
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const failures: string[] = [];
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-goog-api-key": process.env.GEMINI_API_KEY as string,
-    },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM }] },
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: MAX_TOKENS,
-        // Low, deliberately. This answers from figures, and there is nothing
-        // to be gained from it being inventive about them.
-        temperature: 0.2,
-      },
-    }),
-    signal,
-    cache: "no-store",
-  });
+  for (const model of GEMINI_MODELS) {
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-  if (!res.ok) return null;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY as string,
+        },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: MAX_TOKENS,
+            // Low, deliberately. This answers from figures, and there is
+            // nothing to be gained from it being inventive about them.
+            temperature: 0.2,
+          },
+        }),
+        signal,
+        cache: "no-store",
+      });
+    } catch (e) {
+      failures.push(`${model}: ${e instanceof Error ? e.message : "network"}`);
+      continue;
+    }
 
-  const body = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-    promptFeedback?: { blockReason?: string };
-  };
+    if (!res.ok) {
+      // 404 means that name is gone — try the next. 400 and 403 are the key
+      // or the project, and trying more names will not help, so stop.
+      const detail = `${model}: HTTP ${res.status}`;
+      failures.push(detail);
+      if (res.status === 404) continue;
+      break;
+    }
 
-  if (body.promptFeedback?.blockReason) return null;
+    const body = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+      promptFeedback?: { blockReason?: string };
+    };
 
-  const text = (body.candidates?.[0]?.content?.parts ?? [])
-    .map((p) => p.text ?? "")
-    .join("")
-    .trim();
+    if (body.promptFeedback?.blockReason) {
+      failures.push(`${model}: blocked (${body.promptFeedback.blockReason})`);
+      break;
+    }
 
-  return text || null;
+    const text = (body.candidates?.[0]?.content?.parts ?? [])
+      .map((p) => p.text ?? "")
+      .join("")
+      .trim();
+
+    if (text) {
+      lastFailure = "";
+      return text;
+    }
+
+    // A 200 with no text is usually MAX_TOKENS reached before anything was
+    // emitted, or a safety stop. Worth naming rather than retrying blindly.
+    failures.push(`${model}: empty (${body.candidates?.[0]?.finishReason ?? "no reason given"})`);
+    break;
+  }
+
+  lastFailure = failures.join(" | ");
+  return null;
 }

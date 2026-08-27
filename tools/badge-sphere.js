@@ -38,10 +38,17 @@ const BADGES = [
   { id:'07', file:'OPSERVOR_Badge_07_Simulate_Dolphin.png',     cx:630, cy:872, r:55 },
   { id:'08', file:'OPSERVOR_Badge_08_Root_Octopus.png',         cx:630, cy:818, r:55 },
   { id:'09', file:'OPSERVOR_Badge_09_Memory_Elephant.png',      cx:632, cy:855, r:58 },
-  { id:'10', file:'OPSERVOR_Badge_10_Proof_Lighthouse.png',     cx:630, cy:855, r:58 },
+  // Not square, unlike the other nine — 1197 x 1314. Its seal sits lower and
+  // further left in consequence. The canvas is read from the file rather than
+  // assumed, so a badge is never stretched to fit a shape it does not have.
+  { id:'10', file:'OPSERVOR_Badge_10_Proof_Lighthouse.png',     cx:588, cy:884, r:60 },
 ];
 
-const SIZE = 1254;
+/** Width and height straight out of the PNG's IHDR chunk. */
+function pngSize(file) {
+  const b = fs.readFileSync(file);
+  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
 
 /* The mark itself — the real Opservor asset, not an approximation of it.
  *
@@ -96,21 +103,27 @@ const sphere = (r) => {
     args: ['--allow-file-access-from-files', '--force-device-scale-factor=1'],
   });
   const page = await browser.newPage();
-  await page.setViewport({ width: SIZE, height: SIZE, deviceScaleFactor: 1 });
 
   console.log('');
   for (const b of todo) {
+    const srcPath = path.join(DIR, b.file);
+
+    // The badges do not all share a shape — the Lighthouse came back portrait
+    // while the rest are square. Taking the canvas from the file means a badge
+    // is never stretched to fit a size this script assumed it had.
+    const { w, h } = pngSize(srcPath);
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
+
     // A page made with setContent lives at about:blank, and Chrome will not
     // let that document load a file:// image. So the badge goes in inline.
-    const src = 'data:image/png;base64,'
-      + fs.readFileSync(path.join(DIR, b.file)).toString('base64');
+    const src = 'data:image/png;base64,' + fs.readFileSync(srcPath).toString('base64');
 
     await page.setContent(`<!doctype html>
 <style>
   *{margin:0;padding:0}
-  html,body{width:${SIZE}px;height:${SIZE}px;overflow:hidden;background:#000}
-  .wrap{position:relative;width:${SIZE}px;height:${SIZE}px}
-  .wrap img{width:${SIZE}px;height:${SIZE}px;display:block}
+  html,body{width:${w}px;height:${h}px;overflow:hidden;background:#000}
+  .wrap{position:relative;width:${w}px;height:${h}px}
+  .wrap img{width:${w}px;height:${h}px;display:block}
   .seal{position:absolute;left:${b.cx}px;top:${b.cy}px;width:0;height:0}
 </style>
 <div class="wrap">
@@ -129,7 +142,8 @@ const sphere = (r) => {
     await page.screenshot({ path: dest, type: 'png' });
 
     const kb = Math.round(fs.statSync(dest).size / 1024);
-    console.log(`  ${b.id}  ${path.basename(dest).padEnd(48)} ${String(kb).padStart(4)} KB`);
+    const dim = `${w}x${h}`;
+    console.log(`  ${b.id}  ${path.basename(dest).padEnd(48)} ${dim.padEnd(10)} ${String(kb).padStart(4)} KB`);
   }
 
   await browser.close();

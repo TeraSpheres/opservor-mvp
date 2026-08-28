@@ -92,7 +92,7 @@ const b64 = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base6
     /* Plate: the app tile. A rounded square of the product navy with the mark
      * on it, so the icon has a body of its own on a home screen or a taskbar
      * rather than floating on whatever colour is behind it. */
-    const plate = (img, S) => {
+    const plate = (img, S, fill, flat) => {
       const c = document.createElement('canvas');
       c.width = S; c.height = S;
       const g = c.getContext('2d');
@@ -105,9 +105,36 @@ const b64 = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base6
       g.fillStyle = bg; g.fill();
       g.clip();
       g.imageSmoothingQuality = 'high';
-      const s = Math.min(S / img.naturalWidth, S / img.naturalHeight) * 0.62;
+      const s = Math.min(S / img.naturalWidth, S / img.naturalHeight) * (fill || 0.62);
       const w = img.naturalWidth * s, h = img.naturalHeight * s;
-      g.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+
+      /* At favicon sizes the mark is flattened to one bright colour.
+       *
+       * Polished silver is a gradient running from near-black in the bevel to
+       * near-white on the highlight, and it looks expensive at 512px. At 16px
+       * those tones average into mid-grey against a navy tile and the glyph
+       * disappears — which is what "a block logo on the tab" was. Flattening
+       * throws away the metal and keeps the silhouette, which is the only
+       * part that can survive at that size anyway.
+       *
+       * Above favicon sizes the metal is kept: there, it is the point. */
+      if (flat) {
+        const t = document.createElement('canvas');
+        t.width = Math.ceil(w); t.height = Math.ceil(h);
+        const tg = t.getContext('2d');
+        tg.imageSmoothingQuality = 'high';
+        tg.drawImage(img, 0, 0, t.width, t.height);
+        const d = tg.getImageData(0, 0, t.width, t.height);
+        const a = d.data;
+        for (let i = 0; i < a.length; i += 4) {
+          if (!a[i + 3]) continue;
+          a[i] = 0xE9; a[i + 1] = 0xF1; a[i + 2] = 0xFC;
+        }
+        tg.putImageData(d, 0, 0);
+        g.drawImage(t, (S - w) / 2, (S - h) / 2, w, h);
+      } else {
+        g.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+      }
       return c.toDataURL();
     };
 
@@ -128,10 +155,25 @@ const b64 = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base6
     for (const S of SQUARES)
       out.push({ name: `teraspheres-${S}.png`, url: square(m, S, 0.82), note: `${S}x${S}  monogram` });
 
-    // Favicons get less inset: at 16px, margin is the difference between a
-    // recognisable glyph and three grey pixels.
+    /* Favicons take the plate, not the bare monogram.
+     *
+     * The first version put the transparent monogram straight into the
+     * favicon and it came out as a pale grey smudge. The mark is polished
+     * silver: its contrast comes from a bright highlight against a dark
+     * ground, and on transparency there is no dark ground — it inherits
+     * whatever the browser paints behind the tab, which is already dark.
+     * Silver on dark grey at 16px is a blob.
+     *
+     * The plate gives it back the ground it was drawn against, and the mark
+     * is drawn larger here than on the big tiles because at 16px margin is
+     * the difference between a glyph and three grey pixels. */
+    /* The smaller the icon, the more of the tile the glyph must take.
+     * A margin that reads as poise at 48px is, at 16px, four wasted pixels
+     * on each side of a mark that only had sixteen to work with. */
+    const favFill = { 16: 0.94, 32: 0.86, 48: 0.8 };
     for (const S of FAVS)
-      out.push({ name: `teraspheres-fav-${S}.png`, url: square(m, S, 0.94), note: `${S}x${S}  favicon` });
+      out.push({ name: `teraspheres-fav-${S}.png`, url: plate(m, S, favFill[S] || 0.82, false),
+                 note: `${S}x${S}  favicon` });
 
     for (const S of PLATES)
       out.push({ name: `teraspheres-plate-${S}.png`, url: plate(m, S), note: `${S}x${S}  app tile` });

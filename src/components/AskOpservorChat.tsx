@@ -1,5 +1,4 @@
 "use client";
-
 /* Ask Opservor, as a conversation rather than a form.
  *
  * The panel this replaces sat on the dashboard and looked like a search box,
@@ -12,6 +11,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import Logo from "@/components/Logo";
 
 interface Message {
   role: "you" | "opservor";
@@ -88,9 +88,10 @@ export default function AskOpservorChat() {
           aria-label="Ask Opservor"
           className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-brand-light"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5 8.4 8.4 0 0 1 8.5 8.5z" />
-          </svg>
+          {/* The mark, not a speech bubble. A generic chat glyph said "this is
+              a chat widget", which is the one thing about this that is not
+              worth saying — every product has one. The mark says whose. */}
+          <Logo className="h-5 w-5" />
           Ask Opservor
         </button>
       )}
@@ -98,9 +99,12 @@ export default function AskOpservorChat() {
       {open && (
         <div className="fixed bottom-6 right-6 z-40 flex h-[32rem] w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-border bg-panel shadow-2xl">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-ink">Ask Opservor</p>
-              <p className="text-xs text-muted">About your own operation</p>
+            <div className="flex items-center gap-2.5">
+              <Logo className="h-7 w-7 flex-none" />
+              <div>
+                <p className="text-sm font-semibold text-ink">Ask Opservor</p>
+                <p className="text-xs text-muted">About your own operation</p>
+              </div>
             </div>
             <button
               onClick={() => setOpen(false)}

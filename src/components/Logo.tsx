@@ -1,67 +1,64 @@
-/* The Opservor mark — two bands orbiting a sphere.
+/* The Opservor mark.
  *
- * Replaces the geodesic wireframe, which was retired across the brand and
- * lived on in the app because nobody looked here.
+ * This used to be an SVG that reconstructed the mark from arcs and gradients —
+ * two bands orbiting a sphere, drawn here rather than loaded. The geometry was
+ * carefully checked against a sampled version of the curve, and it was still
+ * the wrong approach: the real mark is a dotted globe inside two orbital
+ * ribbons, it lives in the brand folder, and an interpretation of it is not it.
  *
- * The band geometry is a rotated ellipse. Each half is one arc command,
- * checked against a 96-point sampled version of the same curve: they differ
- * by 41/255 at the antialiased edges, against 255 for a deliberately wrong
- * radius. The arcs are the curve, not an approximation of it.
+ * The same fault was found in three other places on the same day — the
+ * generated screens, the deck, and the screen renderer — all of them drawing
+ * a blue ball where the asset should have been. Any mark that is drawn will
+ * eventually disagree with the one that is stored. So this loads the file.
  *
- * Depth without an opaque occluder: the full ellipses are drawn faint, the
- * sphere over them, then the near halves at full strength. A solid disc would
- * have to match whatever surface the logo sits on, and this has to work on the
- * sidebar and the login screen both.
+ * The API is unchanged, so every call site keeps working: pass `size` for a
+ * pixel value, or `className` with Tailwind height/width utilities as the
+ * sidebar and login screen do.
  */
 
-const A_FRONT = "M57.68 23.66 A27 9 -18 0 1 6.32 40.34";
-const B_FRONT = "M52.68 49.36 A27 9 40 0 1 11.32 14.64";
+/* The disc behind the mark. The artwork is a glowing globe on a dark ground
+ * and it is designed for one — dropped straight onto a light surface its glow
+ * has nothing to sit against. The disc travels with it so the mark looks the
+ * same wherever it is used. */
+const DISC =
+  "radial-gradient(circle at 50% 42%, #0C1A33 0%, #070F1E 66%, #040A14 100%)";
 
 export default function Logo({
-  size = 32,
+  size,
   className,
 }: {
   size?: number;
   className?: string;
 }) {
-  // Unique per instance so two logos on one page cannot fight over the
-  // gradient id — the second would otherwise inherit the first's.
-  const gid = `opservorMark-${size}`;
-
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <span
+      className={className}
+      style={{
+        display: "inline-block",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: "50%",
+        background: DISC,
+        boxShadow: "0 0 10px rgba(59,130,246,.45)",
+        ...(size ? { width: size, height: size } : null),
+      }}
       role="img"
       aria-label="Opservor"
-      className={className}
     >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7CC4FF" />
-          <stop offset="0.5" stopColor="#3B82F6" />
-          <stop offset="1" stopColor="#22D3EE" />
-        </linearGradient>
-      </defs>
-
-      {/* Far halves, faint — the bands passing behind */}
-      <g stroke={`url(#${gid})`} strokeWidth="4" fill="none" opacity="0.32">
-        <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(-18 32 32)" />
-        <ellipse cx="32" cy="32" rx="27" ry="9" transform="rotate(40 32 32)" />
-      </g>
-
-      {/* The sphere */}
-      <circle cx="32" cy="32" r="15" fill={`url(#${gid})`} opacity="0.14" />
-      <circle cx="32" cy="32" r="15" stroke={`url(#${gid})`} strokeWidth="2.6" fill="none" />
-
-      {/* Near halves, full strength — the bands passing in front */}
-      <g stroke={`url(#${gid})`} strokeWidth="4.6" fill="none" strokeLinecap="round">
-        <path d={B_FRONT} />
-        <path d={A_FRONT} />
-      </g>
-    </svg>
+      {/* Slightly under 100%, so the orbit ribbons keep clear of the rim
+          rather than being clipped by it. */}
+      <img
+        src="/brand/opservor-256.png"
+        alt=""
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: "97%",
+          height: "97%",
+          transform: "translate(-50%, -50%)",
+        }}
+      />
+    </span>
   );
 }

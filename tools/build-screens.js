@@ -24,6 +24,9 @@ const puppeteer = require('puppeteer-core');
 
 const OUT = 'C:/Users/ahsan/Documents/TeraSpheres_Archive/Posts/Screens';
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const MARK_FILE = 'C:/opservor-mvp/teraspheres-website/brand/opservor-1024.png';
+const MARK = 'data:image/png;base64,'
+  + fs.readFileSync(MARK_FILE).toString('base64');
 fs.mkdirSync(OUT, { recursive: true });
 
 const W = 1920, H = 1080, SCALE = 2;   // -> 3840 x 2160
@@ -49,8 +52,17 @@ body{
 /* rail */
 .rail{width:250px;flex:0 0 250px;border-right:1px solid #16233A;padding:30px 0;display:flex;flex-direction:column}
 .brand{padding:0 26px 26px;display:flex;align-items:center;gap:11px}
-.orb{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#4DA3FF,#1D4ED8 60%,#0B2A6B);
-  box-shadow:0 0 14px rgba(59,130,246,.55)}
+/* The real mark, loaded from the brand folder. This used to be a CSS gradient
+ * — a plain blue ball approximating the logo — which is the same fault the
+ * generated screens had, committed deliberately instead of by an image model.
+ * The mark is a dotted globe inside two orbital ribbons and cannot be
+ * approximated by a radial-gradient; and a screen that disagrees with brand/
+ * is wrong however good it looks. */
+.orb{width:30px;height:30px;border-radius:50%;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 50% 42%,#0C1A33,#050C1A 70%);
+  box-shadow:0 0 14px rgba(59,130,246,.5)}
+.orb img{position:absolute;left:50%;top:50%;width:29px;height:29px;
+  transform:translate(-50%,-50%)}
 .brand .n{font-size:17px;font-weight:600;letter-spacing:.2px}
 .brand .s{font-size:9.5px;letter-spacing:.22em;color:#5D7characters;color:#5C7characters}
 .brand .s{color:#587characters}
@@ -140,7 +152,7 @@ td .ok{color:var(--green)}
 
 const rail = (active) => `
 <div class="rail">
-  <div class="brand"><div class="orb"></div>
+  <div class="brand"><div class="orb"><img src="${MARK}"></div>
     <div><div class="n">Opservor HQ</div><div class="s">GUARDIAN</div></div></div>
   <div class="nav">
     ${['Dashboard','Guardian','Inventory','Fleet','Warehouse','Connections','Reports']

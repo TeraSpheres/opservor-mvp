@@ -52,5 +52,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon).*)"],
+  /* `brand` is exempt because the login screen shows the Opservor mark, and
+   * whoever is looking at the login screen is by definition not signed in.
+   * Without this the mark's own request is redirected to the login page, and
+   * the first screen anyone sees renders with a broken image. Found by
+   * checking what the deployment actually served rather than by loading the
+   * page — an authenticated session hides this completely. */
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|brand).*)"],
 };

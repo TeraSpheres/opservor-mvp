@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { fmtDateTime } from "@/lib/when";
 
 interface CredentialField {
   key: string;
@@ -190,7 +191,7 @@ export default function ConnectionsPage() {
                   </div>
                   <p className="mt-1 text-xs text-muted">
                     {c.last_sync_at
-                      ? `Last read ${new Date(c.last_sync_at).toLocaleString()}${
+                      ? `Last read ${fmtDateTime(c.last_sync_at)}${
                           c.last_sync_status ? ` — ${c.last_sync_status}` : ""
                         }`
                       : "Never read anything yet."}

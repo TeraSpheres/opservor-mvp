@@ -14,6 +14,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { GuardianFinding, FindingSeverity, EvidenceRow } from "@/lib/types";
+import { fmtDateTime } from "@/lib/when";
 
 const SEVERITY_ORDER: Record<FindingSeverity, number> = {
   critical: 0,
@@ -428,7 +429,7 @@ export default function GuardianPage() {
             {high > 0 && <span className="text-amber-400">{high} close behind</span>}
             {lastRun && (
               <span className="ml-auto text-xs text-muted">
-                Last checked {new Date(lastRun).toLocaleString()}
+                Last checked {fmtDateTime(lastRun)}
               </span>
             )}
           </div>

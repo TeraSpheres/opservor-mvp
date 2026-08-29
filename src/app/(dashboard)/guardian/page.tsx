@@ -60,7 +60,13 @@ const LABELS: [string, string][] = [
   ["items_already_late", "Already past ordering time"],
   ["soonest_days", "Soonest runs out (days)"],
   ["worst_item", "Most urgent item"],
-  ["units_to_order", "Units to order"],
+  /* Named as recorded, not as calculated. Every other figure in this panel
+   * is derived from the movement ledger and can be checked by dividing one
+   * number by another. This one is the sum of the reorder quantity typed
+   * against each item, so it is only as good as those records — and a panel
+   * headed "how this was worked out" should not present a stored value as
+   * though it were worked out. Same reasoning as assumed_lead_days. */
+  ["units_to_order", "Units to order (recorded)"],
   // impossible_stock
   ["items_affected", "Items affected"],
   ["items_moving", "Items trading"],

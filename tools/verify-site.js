@@ -19,7 +19,7 @@ const OUT = 'C:/Users/ahsan/AppData/Local/Temp/claude/C--opservor-mvp-opservor-m
     { waitUntil: 'networkidle0' });
   await p.evaluate(() => Promise.all(
     [...document.images].filter((i) => i.complete).map((i) => i.decode().catch(() => {}))));
-  await p.screenshot({ path: path.join(OUT, 'site-top.png'), clip: { x: 0, y: 0, width: 1440, height: 260 } });
+  await p.screenshot({ path: path.join(OUT, 'site-top.png'), clip: { x: 0, y: 0, width: 1440, height: 800 } });
 
   // Footer
   const h = await p.evaluate(() => document.body.scrollHeight);

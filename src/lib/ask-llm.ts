@@ -34,9 +34,14 @@ const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 const GEMINI_MODELS = process.env.GEMINI_MODEL
   ? [process.env.GEMINI_MODEL]
   : [
+      /* The alias first, on evidence rather than preference. In production
+       * the two dated names both returned 404 for this key and only this one
+       * resolved — and an alias survives Google's renames by design, which
+       * is the whole reason it exists. The dated names stay behind it in
+       * case a future key has access to a specific version. */
+      "gemini-flash-latest",
       "gemini-2.5-flash",
       "gemini-2.0-flash",
-      "gemini-flash-latest",
       "gemini-1.5-flash",
     ];
 
@@ -221,6 +226,18 @@ async function callAnthropic(prompt: string, signal: AbortSignal): Promise<strin
  * with no candidates and a blockReason — so an empty answer has to be treated
  * as a failure rather than as an empty answer.
  */
+/* How long to wait before asking a busy model again. Two short pauses, not
+ * an exponential ladder: the caller has a twenty-second budget for the whole
+ * exchange and somebody is watching a cursor blink. */
+const BUSY_BACKOFF_MS = [400, 1200];
+
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => { clearTimeout(timer); reject(new Error("aborted")); },
+      { once: true });
+  });
+
 async function callGemini(prompt: string, signal: AbortSignal): Promise<string | null> {
   const failures: string[] = [];
 
@@ -228,38 +245,70 @@ async function callGemini(prompt: string, signal: AbortSignal): Promise<string |
     const url =
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY as string,
-        },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            maxOutputTokens: MAX_TOKENS,
-            // Low, deliberately. This answers from figures, and there is
-            // nothing to be gained from it being inventive about them.
-            temperature: 0.2,
+    /* Attempts against THIS model. A busy model is not a broken model, and
+     * the previous version treated them identically: a 503 broke out of the
+     * loop entirely, so one busy moment abandoned a name that worked and the
+     * whole feature fell back to the pattern matcher.
+     *
+     * That is how it actually failed in production. The log read
+     * "gemini-2.5-flash: HTTP 404 | gemini-2.0-flash: HTTP 404 |
+     * gemini-flash-latest: HTTP 503" — the third name resolved and was simply
+     * overloaded at that instant, and nothing tried it again. */
+    let res: Response | null = null;
+    let networkError: string | null = null;
+
+    for (let attempt = 0; attempt <= BUSY_BACKOFF_MS.length; attempt++) {
+      try {
+        res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-goog-api-key": process.env.GEMINI_API_KEY as string,
           },
-        }),
-        signal,
-        cache: "no-store",
-      });
-    } catch (e) {
-      failures.push(`${model}: ${e instanceof Error ? e.message : "network"}`);
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM }] },
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+              maxOutputTokens: MAX_TOKENS,
+              // Low, deliberately. This answers from figures, and there is
+              // nothing to be gained from it being inventive about them.
+              temperature: 0.2,
+            },
+          }),
+          signal,
+          cache: "no-store",
+        });
+      } catch (e) {
+        networkError = e instanceof Error ? e.message : "network";
+        break;
+      }
+
+      // 503 is overloaded, 429 is rate-limited. Both mean "ask again shortly",
+      // and both are the model saying yes-but-not-now rather than no.
+      const busy = res.status === 503 || res.status === 429;
+      if (!busy || attempt === BUSY_BACKOFF_MS.length) break;
+
+      failures.push(`${model}: HTTP ${res.status}, retrying`);
+      try {
+        await sleep(BUSY_BACKOFF_MS[attempt], signal);
+      } catch {
+        break;   // the caller's timeout fired; stop rather than press on
+      }
+    }
+
+    if (networkError || !res) {
+      failures.push(`${model}: ${networkError ?? "no response"}`);
       continue;
     }
 
     if (!res.ok) {
-      // 404 means that name is gone — try the next. 400 and 403 are the key
-      // or the project, and trying more names will not help, so stop.
-      const detail = `${model}: HTTP ${res.status}`;
-      failures.push(detail);
-      if (res.status === 404) continue;
+      /* 404 means that name is gone and another might not be. 503 and 429
+       * have already been retried above, so reaching here with one means the
+       * model stayed busy — worth trying a different name rather than giving
+       * up on the whole provider. 400 and 403 are the key or the project, and
+       * no other model name will help, so stop. */
+      failures.push(`${model}: HTTP ${res.status}`);
+      if (res.status === 404 || res.status === 503 || res.status === 429) continue;
       break;
     }
 

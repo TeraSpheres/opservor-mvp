@@ -94,6 +94,7 @@ const LABELS: [string, string][] = [
 const NOTE_PREFIX: Record<string, string> = {
   lead_time_source: "Lead time is",
   link_source: "Which vehicles serve this site is",
+  order_qty_source: "Units to order is",
 };
 
 /** Column headings for the line-item lists inside a grouped finding. */

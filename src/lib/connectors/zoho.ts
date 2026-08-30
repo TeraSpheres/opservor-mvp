@@ -91,14 +91,25 @@ function readCredentials(cfg: ConnectorConfig): ZohoCredentials {
  * way. Derived from the API base rather than stored separately, so a connection
  * pointed at Europe mints its token in Europe too — getting that pair out of
  * step produces an "invalid client" that sends you looking at the secret.
+ *
+ * Canada breaks the pattern. Its API is served from www.zohoapis.ca like every
+ * other region, but its sign-in is accounts.zohocloud.ca — accounts.zoho.ca
+ * does not resolve at all. Derivation alone therefore sent every Canadian
+ * account to a hostname that does not exist, and the failure arrived as
+ * "invalid client", which reads as a bad secret. Found the first time this was
+ * pointed at a real Canadian account; the exceptions are listed rather than
+ * inferred, and each was checked against the live endpoint.
  */
+const ACCOUNTS_HOST_EXCEPTIONS: Record<string, string> = {
+  ca: "https://accounts.zohocloud.ca",
+};
+
 function accountsHostFor(baseUrl: string): string {
   try {
     const host = new URL(baseUrl).host;                 // www.zohoapis.eu
     const suffix = host.replace(/^www\.zohoapis\./, ""); // eu
-    return suffix && suffix !== host
-      ? `https://accounts.zoho.${suffix}`
-      : "https://accounts.zoho.com";
+    if (!suffix || suffix === host) return "https://accounts.zoho.com";
+    return ACCOUNTS_HOST_EXCEPTIONS[suffix] ?? `https://accounts.zoho.${suffix}`;
   } catch {
     return "https://accounts.zoho.com";
   }

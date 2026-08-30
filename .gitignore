@@ -6,3 +6,6 @@ tsconfig.tsbuildinfo
 
 .vercel
 .env*
+
+# Holds a Zoho client secret while a connection is being set up.
+tools/zoho-values.txt

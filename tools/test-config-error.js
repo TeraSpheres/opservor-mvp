@@ -77,6 +77,10 @@ try {
     e.message.slice(0, 60)
   );
   check('the complaint says what to do', /single|unbroken|line/i.test(e.message));
+  /* It must not explain the fault in terms of headers. That is true of the
+   * service role key and false of the encryption key, and the same sentence
+   * serves both. */
+  check('and does not guess why the value is needed', !/header/i.test(e.message));
 }
 
 /* 2. A key with a trailing newline is a paste artefact, not a fault. Trimmed. */

@@ -64,10 +64,13 @@ function readSecret(name: string, minLength = 0): string {
   const value = raw.trim();
 
   if (/\s/.test(value)) {
+    /* Deliberately says nothing about what the value is for. The first version
+     * explained that a header cannot contain a line break, which is true of the
+     * service role key and not of the encryption key — so the one place the
+     * message actually got read, it explained the wrong thing. */
     throw new ConfigError(
-      `${name} has a space or line break inside it, so it cannot be sent as a ` +
-      `header. It was probably pasted across two lines. Set it again as a single ` +
-      `unbroken line.`
+      `${name} has a space or line break in the middle of it. It was probably ` +
+      `pasted across two lines. Set it again as a single unbroken line.`
     );
   }
 

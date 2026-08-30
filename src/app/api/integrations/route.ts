@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
+import { createAdminClient, integrationKey, configErrorMessage } from "@/lib/supabase/admin";
 import { getConnector, packCredentials, listProviders } from "@/lib/connectors";
 
 /* Connections.
@@ -155,10 +155,7 @@ export async function POST(request: Request) {
     admin = createAdminClient();
     key = integrationKey();
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Integrations are not configured." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: configErrorMessage(e) }, { status: 500 });
   }
 
   // The connection row itself, scoped to the company the session proved.

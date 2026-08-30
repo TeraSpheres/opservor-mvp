@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, integrationKey } from "@/lib/supabase/admin";
+import { createAdminClient, integrationKey, configErrorMessage } from "@/lib/supabase/admin";
 import { getConnector } from "@/lib/connectors";
 import { syncVehicles, syncTrips, syncMaintenance, syncItems } from "@/lib/connectors/sync";
 
@@ -45,10 +45,7 @@ export async function POST(request: Request) {
     admin = createAdminClient();
     key = integrationKey();
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Integrations are not configured." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: configErrorMessage(e) }, { status: 500 });
   }
 
   // Scoped to the caller's own company. Without this, an id from another

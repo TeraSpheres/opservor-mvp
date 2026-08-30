@@ -3,7 +3,7 @@ import { samsaraConnector, SAMSARA_BASE_URL } from "./samsara";
 import { motiveConnector, MOTIVE_BASE_URL } from "./motive";
 import { geotabConnector, GEOTAB_BASE_URL } from "./geotab";
 import { fleetioConnector, FLEETIO_BASE_URL } from "./fleetio";
-import { zohoConnector, ZOHO_BASE_URL } from "./zoho";
+import { zohoConnector, ZOHO_BASE_URL, ZOHO_REGIONS } from "./zoho";
 
 /* The register of systems Opservor can talk to.
  *
@@ -24,6 +24,15 @@ export interface CredentialField {
   secret?: boolean;
   placeholder?: string;
   hint?: string;
+  /**
+   * Turns the field into a dropdown. For anything the product already knows
+   * the answers to — a region is a fixed list, and asking someone to type a
+   * value from a list they cannot see is how they end up typing the name of
+   * their country into a field that wanted a URL.
+   */
+  options?: { value: string; label: string }[];
+  /** Pre-selected, so a dropdown is never submitted empty by accident. */
+  defaultValue?: string;
 }
 
 export interface RegisteredConnector {
@@ -130,6 +139,17 @@ const REGISTRY: Record<string, RegisteredConnector> = {
     brings: "Stock items and levels, for the shortage checks",
     untested: true,
     fields: [
+      /* First, because it decides which country's Zoho every other value on
+       * this form is checked against. It used to be a URL in a collapsed box
+       * further down, which meant the one field that had to be right was the
+       * one nobody could see. */
+      {
+        key: "region",
+        label: "Where is your Zoho account?",
+        defaultValue: "com",
+        options: ZOHO_REGIONS.map(({ value, label }) => ({ value, label })),
+        hint: "Look at the address bar in Zoho Inventory — the part after 'zoho' is your region.",
+      },
       { key: "organizationId", label: "Organisation ID", placeholder: "e.g. 10234695",
         hint: "Zoho Inventory: Settings, then Organisation Profile." },
       { key: "clientId", label: "Client ID", secret: true },

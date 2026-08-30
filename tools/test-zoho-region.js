@@ -108,6 +108,49 @@ const CREDENTIALS = JSON.stringify({
     ok ? pass++ : fail++;
   }
 
+  /* The region now comes from a dropdown on the form and travels with the
+   * credentials, because the box it replaced was collapsed by default, held a
+   * URL, and emptied on every reload. A region chosen there must decide both
+   * hosts on its own, with no base URL set at all. */
+  for (const { value, api, label } of [
+    { value: 'ca', api: 'www.zohoapis.ca', label: 'accounts.zohocloud.ca' },
+    { value: 'com', api: 'www.zohoapis.com', label: 'accounts.zoho.com' },
+    { value: 'eu', api: 'www.zohoapis.eu', label: 'accounts.zoho.eu' },
+  ]) {
+    const seen = [];
+    global.fetch = fakeFetch(seen);
+
+    const withRegion = JSON.stringify({ ...JSON.parse(CREDENTIALS), region: value });
+    const result = await zohoConnector.verify({ token: withRegion, baseUrl: '' });
+
+    const token = seen.find((u) => u.includes('/oauth/v2/token')) || '';
+    const items = seen.find((u) => u.includes('/inventory/v1/items')) || '';
+    const ok =
+      result.ok &&
+      token.includes(label) &&
+      items.includes(api);
+
+    console.log(
+      `  ${ok ? 'PASS' : 'FAIL'}  region "${value}" alone reaches ${label} and ${api}` +
+      (ok ? '' : `  — got ${token || '(none)'} / ${items || '(none)'}`)
+    );
+    ok ? pass++ : fail++;
+  }
+
+  /* A region the product does not know must not silently become the American
+   * one. Falling back to the base URL is what keeps older connections working,
+   * and it is also what a test server needs. */
+  {
+    const seen = [];
+    global.fetch = fakeFetch(seen);
+    const odd = JSON.stringify({ ...JSON.parse(CREDENTIALS), region: 'atlantis' });
+    await zohoConnector.verify({ token: odd, baseUrl: 'https://www.zohoapis.eu' });
+    const items = seen.find((u) => u.includes('/inventory/v1/items')) || '';
+    const ok = items.includes('www.zohoapis.eu');
+    console.log(`  ${ok ? 'PASS' : 'FAIL'}  an unknown region falls back to the base URL, not to America`);
+    ok ? pass++ : fail++;
+  }
+
   global.fetch = realFetch;
   console.log(`\n  ${pass} passed, ${fail} failed\n`);
   process.exitCode = fail ? 1 : 0;

@@ -45,6 +45,8 @@ interface ZohoCredentials {
   clientId: string;
   clientSecret: string;
   refreshToken: string;
+  /** Optional, because connections made before the dropdown existed have none. */
+  region?: string;
 }
 
 interface ZohoItem {
@@ -115,10 +117,47 @@ function accountsHostFor(baseUrl: string): string {
   }
 }
 
+/* The regions, named the way an operator would say them.
+ *
+ * This exists because the first version had no such list. The region was
+ * carried by the "different region or a test server" box, which is collapsed
+ * by default, holds a URL, and empties every time the page reloads. A Canadian
+ * operator therefore had to know that their country meant typing
+ * https://www.zohoapis.ca into a hidden field — and when they typed "canada",
+ * which is the sensible answer to the question the field asks, Zoho refused
+ * the credentials and the screen blamed the client secret.
+ *
+ * Watching that happen three times to the same person is what produced this
+ * list. The address is ours to know; the country is theirs.
+ */
+export const ZOHO_REGIONS: { value: string; label: string; api: string }[] = [
+  { value: "com", label: "United States / rest of world", api: "https://www.zohoapis.com" },
+  { value: "ca", label: "Canada — your Zoho address says zohocloud.ca", api: "https://www.zohoapis.ca" },
+  { value: "eu", label: "Europe", api: "https://www.zohoapis.eu" },
+  { value: "in", label: "India", api: "https://www.zohoapis.in" },
+  { value: "com.au", label: "Australia", api: "https://www.zohoapis.com.au" },
+  { value: "jp", label: "Japan", api: "https://www.zohoapis.jp" },
+  { value: "com.cn", label: "China", api: "https://www.zohoapis.com.cn" },
+  { value: "sa", label: "Saudi Arabia", api: "https://www.zohoapis.sa" },
+];
+
+/**
+ * Where this connection's requests go.
+ *
+ * A region chosen on the form wins. Falling back to the base URL keeps any
+ * connection made before the dropdown existed working unchanged, and still
+ * allows a test server to be pointed at by hand.
+ */
+function apiBaseFor(cfg: ConnectorConfig, region?: string): string {
+  const known = region && ZOHO_REGIONS.find((r) => r.value === region);
+  if (known) return known.api;
+  return cfg.baseUrl || ZOHO_BASE_URL;
+}
+
 /** Exchanges the stored refresh token for an access token good for one hour. */
 async function accessToken(cfg: ConnectorConfig): Promise<string> {
   const c = readCredentials(cfg);
-  const url = new URL("/oauth/v2/token", accountsHostFor(cfg.baseUrl || ZOHO_BASE_URL));
+  const url = new URL("/oauth/v2/token", accountsHostFor(apiBaseFor(cfg, c.region)));
 
   const body = new URLSearchParams({
     refresh_token: c.refreshToken,
@@ -165,7 +204,7 @@ async function get<T>(
   params: Record<string, string>
 ): Promise<T> {
   const c = readCredentials(cfg);
-  const url = new URL(path, cfg.baseUrl || ZOHO_BASE_URL);
+  const url = new URL(path, apiBaseFor(cfg, c.region));
   url.searchParams.set("organization_id", c.organizationId);
   for (const [k, v] of Object.entries(params)) {
     if (v != null && v !== "") url.searchParams.set(k, v);

@@ -21,6 +21,8 @@ interface CredentialField {
   secret?: boolean;
   placeholder?: string;
   hint?: string;
+  options?: { value: string; label: string }[];
+  defaultValue?: string;
 }
 
 interface Provider {
@@ -45,6 +47,22 @@ interface Connection {
 }
 
 
+
+/**
+ * The values a provider's form starts with.
+ *
+ * A dropdown showing "United States" while holding nothing would be submitted
+ * empty by anyone who did not happen to touch it, and the form would then ask
+ * for a field that appears already answered. What is on screen has to be what
+ * gets sent, from the first render.
+ */
+function defaultsFor(p: Provider | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of p?.fields ?? []) {
+    if (f.options) out[f.key] = f.defaultValue ?? f.options[0].value;
+  }
+  return out;
+}
 
 export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -74,7 +92,10 @@ export default function ConnectionsPage() {
         setConnections(body.connections ?? []);
         const list: Provider[] = body.providers ?? [];
         setProviders(list);
-        if (!provider && list.length) setProvider(list[0].id);
+        if (!provider && list.length) {
+          setProvider(list[0].id);
+          setValues(defaultsFor(list[0]));
+        }
       }
     } catch {
       setProblem("Could not load connections.");
@@ -101,7 +122,9 @@ export default function ConnectionsPage() {
         setDone(body.message || "Connected.");
         // Cleared immediately. There is no reason for a secret to sit in a
         // form field after it has been stored, and every reason for it not to.
-        setValues({});
+        // Back to the defaults rather than to nothing, so the form is in the
+        // same state it loads in.
+        setValues(defaultsFor(providers.find((p) => p.id === provider)));
         setLabel("");
         await load();
       }
@@ -231,7 +254,10 @@ export default function ConnectionsPage() {
               <span className="text-sm text-ink">System</span>
               <select
                 value={provider}
-                onChange={(e) => { setProvider(e.target.value); setValues({}); }}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setValues(defaultsFor(providers.find((p) => p.id === e.target.value)));
+                }}
                 className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"
               >
                 {providers.map((p) => (
@@ -263,15 +289,30 @@ export default function ConnectionsPage() {
               {chosen.fields.map((f) => (
                 <label key={f.key} className="mt-4 block">
                   <span className="text-sm text-ink">{f.label}</span>
-                  <input
-                    type={f.secret ? "password" : "text"}
-                    value={values[f.key] ?? ""}
-                    onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder || ""}
-                    autoComplete="off"
-                    spellCheck={false}
-                    className={`mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink ${f.secret ? "font-mono" : ""}`}
-                  />
+                  {f.options ? (
+                    /* A fixed list is offered rather than typed. The field this
+                     * replaced asked for a URL and got the name of a country,
+                     * which was the honest answer to the question it asked. */
+                    <select
+                      value={values[f.key] ?? f.defaultValue ?? f.options[0].value}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"
+                    >
+                      {f.options.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.secret ? "password" : "text"}
+                      value={values[f.key] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder || ""}
+                      autoComplete="off"
+                      spellCheck={false}
+                      className={`mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink ${f.secret ? "font-mono" : ""}`}
+                    />
+                  )}
                   {f.hint && <span className="mt-1 block text-[11px] text-muted">{f.hint}</span>}
                 </label>
               ))}
